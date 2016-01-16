@@ -76,6 +76,7 @@ bool valideLine(char* line){
 ////////////////////////////////////////////////
 void readFile(char* filename){
     size_t nBytes = 255;
+    char** lines = malloc(sizeof(sizeof(char*)*255)*255);
     
     fp = fopen(filename, "rt");
     if (fp == NULL){
@@ -83,14 +84,17 @@ void readFile(char* filename){
     }
     //int* somenum;
     char* somechar;
-    while(1){
+    int index =0;
+    while(index < 254){
+        
         if (feof(fp)){
             // checking to see if we're pointing at end of the file
             break;
         }
         ssize_t bytesize;
-        bytesize = getline(&somechar, &nBytes, fp);
-        printf("%s", somechar);
+        bytesize = getline(&lines[index], &nBytes, fp);
+        index++;
+        //printf("%s", lines);
     }
     fclose(fp);
 
