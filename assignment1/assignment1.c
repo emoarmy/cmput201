@@ -34,6 +34,8 @@ char* getFilename(char** array, int length){
 }
 
 int* getOptions(void){
+    // Prompts user for the input to construct the circuitry info
+    // and returns an array of characters
     int* max_x_y;
     int* num_pt;
     int* num_inst;
@@ -55,10 +57,6 @@ int* getOptions(void){
     return options;
 }
 
-bool isComment(char* line){
-    // Returns true if the line starts with #
-    return (strcmp(line, "#") !=0);
-}
 /////////////////////////////////////////////////
 //
 // HELPERS
@@ -73,6 +71,11 @@ bool valideLine(char* line){
     }
 } 
 
+
+bool isComment(char* line){
+    // Returns true if the line starts with #
+    return (strcmp(line, "#") !=0);
+}
 /////////////////////////////////////////////////
 //
 // SETTERS
@@ -103,6 +106,13 @@ char** readFile(char* filename){
     return lines;
 }
 
+int* getParameters(char* line[]){
+    // Check line by line for the presence of a commented line. If the line is commented
+    // ignore the line, else add the parameters to the parameters array.
+    int parameter[3];
+    return 0;
+}
+
 /////////////////////////////////////////////////
 //
 // MAIN
@@ -119,6 +129,7 @@ int main(int argc, char **argv){
     if(argc >= 2){
         filename = getFilename(argv, argc);
         lines = readFile(filename);
+        free(lines);
         for(int i=0; i< 2; i++){
             printf("%s / ", lines[i]);
         }
