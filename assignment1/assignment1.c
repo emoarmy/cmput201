@@ -55,6 +55,10 @@ int* getOptions(void){
     return options;
 }
 
+bool isComment(char* line){
+    // Returns true if the line starts with #
+    return (strcmp(line, "#") !=0);
+}
 /////////////////////////////////////////////////
 //
 // HELPERS
@@ -74,30 +78,29 @@ bool valideLine(char* line){
 // SETTERS
 //
 ////////////////////////////////////////////////
-void readFile(char* filename){
+char** readFile(char* filename){
     size_t nBytes = 255;
-    char** lines = malloc(sizeof(sizeof(char*)*255)*255);
+    char **lines = malloc(1000*sizeof(char*));
+    lines[0] = NULL;
     
     fp = fopen(filename, "rt");
     if (fp == NULL){
            exit(EXIT_FAILURE);
     }
     //int* somenum;
-    char* somechar;
     int index =0;
-    while(index < 254){
+    while(index < 3){
         
         if (feof(fp)){
             // checking to see if we're pointing at end of the file
             break;
         }
-        ssize_t bytesize;
-        bytesize = getline(&lines[index], &nBytes, fp);
+        getline(&lines[index], &nBytes, fp);
         index++;
         //printf("%s", lines);
     }
     fclose(fp);
-
+    return lines;
 }
 
 /////////////////////////////////////////////////
@@ -107,6 +110,7 @@ void readFile(char* filename){
 ////////////////////////////////////////////////
 int main(int argc, char **argv){
     char* filename; 
+    char** lines;
     /* int max_x, max_y; */
     /* int num_pt; */
     /* int num_to_generate; */
@@ -114,7 +118,10 @@ int main(int argc, char **argv){
     printf("%i \n", argc);
     if(argc >= 2){
         filename = getFilename(argv, argc);
-        readFile(filename);
+        lines = readFile(filename);
+        for(int i=0; i< 2; i++){
+            printf("%s / ", lines[i]);
+        }
     }else {
         parameters =  getOptions();
     }
