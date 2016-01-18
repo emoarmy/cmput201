@@ -5,7 +5,7 @@ float calcLoan(float current, float interest, float payment){
 }
 
 void monthlyStatement(char* statement, float loan, float interest, float payment){
-    char* month[]= {"first", "second", "third"};
+    char *month[]= {"first", "second", "third"};
     for(int i=0; i < 3; i++){
         loan = calcLoan(loan, interest, payment);
         printf(statement, month[i], loan);

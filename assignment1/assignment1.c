@@ -63,18 +63,9 @@ int* getOptions(void){
 //
 ////////////////////////////////////////////////
 
-bool valideLine(char* line){
-    if(line){
-        return true;
-    } else {
-        return false;
-    }
-} 
-
-
 bool isComment(char* line){
     // Returns true if the line starts with #
-    return (strcmp(line, "#") !=0);
+    return (strcmp(&line[0], "#") !=0);
 }
 /////////////////////////////////////////////////
 //
@@ -90,27 +81,28 @@ char** readFile(char* filename){
     if (fp == NULL){
            exit(EXIT_FAILURE);
     }
-    //int* somenum;
     int index =0;
-    while(index < 3){
-        
-        if (feof(fp)){
-            // checking to see if we're pointing at end of the file
-            break;
-        }
+    while(feof(fp) == 0){
         getline(&lines[index], &nBytes, fp);
         index++;
-        //printf("%s", lines);
     }
+    lines[index+1] = NULL;
     fclose(fp);
     return lines;
 }
 
 int* getParameters(char* line[]){
     // Check line by line for the presence of a commented line. If the line is commented
-    // ignore the line, else add the parameters to the parameters array.
-    int parameter[3];
-    return 0;
+    // ignore the line, else add the parameters to the parameters array. 
+    int* parameters = malloc(sizeof(int)*4);
+    int index=0;
+    for(int i=0; line[i] != NULL; i++){
+        if(!isComment(line[i])){
+            parameters[index] = atoi(line[i]);
+            index++;
+        }
+    }
+    return parameters;
 }
 
 /////////////////////////////////////////////////
