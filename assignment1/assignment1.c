@@ -5,6 +5,20 @@
 
 
 FILE *fp;
+
+/////////////////////////////////////////////////
+//
+// STRUCTS
+//
+/////////////////////////////////////////////////
+typedef struct 
+{
+    int MAX_X;
+    int MAX_Y;
+    int NUM_PT;
+} plane;
+
+
 /////////////////////////////////////////////////
 //
 // GETTERS
@@ -107,9 +121,12 @@ char** readFile(char* filename){
     return lines;
 }
 
-int* getParameters(char* line[]){
+int* getParameters(char* line[], int* size){
     // Check line by line for the presence of a commented line. If the line is commented
     // ignore the line, else add the parameters to the parameters array. 
+    
+    // Passing in size is a dirty trick to pass back the size of an int array in C
+    
     int* parameters = malloc(sizeof(int)*20);
     int index=0;
     for(int i=0; line[i] != NULL; i++){
@@ -118,6 +135,7 @@ int* getParameters(char* line[]){
             index++;
         }
     }
+    *size = index;
     return parameters;
 }
 
@@ -129,6 +147,7 @@ int* getParameters(char* line[]){
 int main(int argc, char **argv){
     char* filename; 
     char** lines;
+    int size=0;
     /* int max_x, max_y; */
     /* int num_pt; */
     /* int num_to_generate; */
@@ -138,10 +157,11 @@ int main(int argc, char **argv){
         filename = getFilename(argv, argc);
         lines = readFile(filename);
         free(lines);
-        parameters = getParameters(lines);
+        parameters = getParameters(lines, &size);
     }else {
         parameters =  getOptions();
     }
+    printf("Size = %i\n", size);
     printf("%i %i %i %i %i\n", parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]);
     return 0;
 }
