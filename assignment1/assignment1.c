@@ -17,7 +17,7 @@ int* getInput(char* prompt, int num_of_values){
     for(int i = 0; i < num_of_values; i++){
         scanf("%d%c", &option[i], &newLine);
     }
-    return option;
+   return option;
 }
 
 char* getFilename(char** array, int length){
@@ -65,7 +65,22 @@ int* getOptions(void){
 
 bool isComment(char* line){
     // Returns true if the line starts with #
-    return (strcmp(&line[0], "#") !=0);
+    if(strncmp(&line[0], "#", strlen("#"))==0){
+        return true;
+    } else {
+        return false;
+    }
+}
+
+int* splitNumbers(char* line){
+    int *array = malloc(sizeof(int)*2) ; // Hard coded because each line in the sample file has at most 2 ints.
+    char **delim;
+    char* argv[10];
+    delim = argv;
+    for(int i=0; (*delim = strsep(&line, " \t")) != NULL; i++){
+        array[i] = atoi(*delim);
+    }
+    return array;
 }
 /////////////////////////////////////////////////
 //
@@ -87,6 +102,7 @@ char** readFile(char* filename){
         index++;
     }
     lines[index+1] = NULL;
+    printf("Lines: %i \n", index+1);
     fclose(fp);
     return lines;
 }
@@ -94,11 +110,11 @@ char** readFile(char* filename){
 int* getParameters(char* line[]){
     // Check line by line for the presence of a commented line. If the line is commented
     // ignore the line, else add the parameters to the parameters array. 
-    int* parameters = malloc(sizeof(int)*4);
+    int* parameters = malloc(sizeof(int)*20);
     int index=0;
     for(int i=0; line[i] != NULL; i++){
         if(!isComment(line[i])){
-            parameters[index] = atoi(line[i]);
+            parameters[index] = *splitNumbers(line[i]);
             index++;
         }
     }
@@ -122,13 +138,10 @@ int main(int argc, char **argv){
         filename = getFilename(argv, argc);
         lines = readFile(filename);
         free(lines);
-        for(int i=0; i< 2; i++){
-            printf("%s / ", lines[i]);
-        }
+        parameters = getParameters(lines);
     }else {
         parameters =  getOptions();
     }
-    
-    //printf("%i %i %i %i\n", parameters[0], parameters[1], parameters[2], parameters[3]);
+    printf("%i %i %i %i %i\n", parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]);
     return 0;
 }
