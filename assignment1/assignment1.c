@@ -84,6 +84,12 @@ Plane getOptions(void){
 // HELPERS
 //
 ////////////////////////////////////////////////
+bool isBetween(int between, int lower, int upper){
+    if (between > lower && upper > between){
+        return true;
+    }
+    return false;
+}
 
 bool isComment(char* line){
     // Returns true if the line starts with #
@@ -176,6 +182,36 @@ Plane getParameters(char* line[]){
 
 /////////////////////////////////////////////////
 //
+// verifying Data
+//
+////////////////////////////////////////////////
+bool checkInstances(Plane plane){
+    int incorrect[plane.instance_size];
+    for(int i=0; i < plane.instance_size; i++){
+        if(isBetween(plane.instance[i][0], plane.MAX_X[0] , plane.MAX_X[1]) && isBetween(plane.instance[i][0], plane.MAX_X[0] , plane.MAX_X[1])){
+            return true;
+        } else{
+        }
+    }
+}
+
+bool PlanetoFile(char* filename, Plane plane){
+    FILE *newFile;
+    newFile = fopen(filename, "w+");
+    
+    fwrite(plane.MAX_X, sizeof(plane.MAX_X), 1, newFile);
+    return true;
+}
+/////////////////////////////////////////////////
+//
+// GEN DATA
+//
+////////////////////////////////////////////////
+int genCoordinate(int min, int max){
+    return (rand() % (max-min+1) + min);
+}
+/////////////////////////////////////////////////
+//
 // MAIN
 //
 ////////////////////////////////////////////////
@@ -199,8 +235,8 @@ int main(int argc, char **argv){
     /* printf("%i %i %i %i %i\n", parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]); */
     printPlane(plane);
     printf("Instance size = %i\n", plane.instance_size);
-    for(int i=0; i < plane.instance_size; i++){
-        printf("instance: %i %i \n", plane.instance[i][0], plane.instance[i][1]);
-    }
+
+    PlanetoFile("newFile.txt", plane);
+    
     return 0;
 }
