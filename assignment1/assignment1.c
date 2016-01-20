@@ -11,12 +11,15 @@ FILE *fp;
 // STRUCTS
 //
 /////////////////////////////////////////////////
-typedef struct 
+typedef struct
 {
-    int MAX_X;
-    int MAX_Y;
+    int MAX_X[2];
+    int MAX_Y[2];
     int NUM_PT;
-} plane;
+    int** instance;
+    int instance_size;
+    int generation;
+} Plane;
 
 
 /////////////////////////////////////////////////
@@ -47,28 +50,33 @@ char* getFilename(char** array, int length){
     return filename;
 }
 
-int* getOptions(void){
+Plane getOptions(void){
     // Prompts user for the input to construct the circuitry info
     // and returns an array of characters
+    Plane plane;
+    plane.MAX_X[0] = 0;
+    plane.MAX_Y[0] = 0;
+
     int* max_x_y;
     int* num_pt;
     int* num_inst;
+
     
     max_x_y = getInput("Enter the circuit board size MAX_X MAX_Y: ", 2);
     num_pt = getInput("Enter the number of points NUM_PT: ", 1);
     num_inst = getInput("Enter the number of random instances to be generated: ", 1);
 
     static int options[4];
-    options[0] = max_x_y[0];
-    options[1] = max_x_y[1];
-    options[2] = num_pt[0];
+    plane.MAX_X[1] = max_x_y[0];
+    plane.MAX_Y[1] = max_x_y[1];
+    plane.NUM_PT = num_pt[0];
     options[3] = num_inst[0];
  
     free(max_x_y);
     free(num_pt);
     free(num_inst);
 
-    return options;
+    return plane;
 }
 
 /////////////////////////////////////////////////
@@ -91,10 +99,22 @@ int* splitNumbers(char* line){
     char **delim;
     char* argv[10];
     delim = argv;
-    for(int i=0; (*delim = strsep(&line, " \t")) != NULL; i++){
-        array[i] = atoi(*delim);
+    printf("Line is: %s", line);
+    if(strcmp(&line[0], " ") != 0){
+        for(int i=0; (*delim = strsep(&line, " \t")) != NULL; i++){
+            array[i] = atoi(*delim);
+        }
+    } else {
+        array = NULL;
     }
-    return array;
+   return array;
+}
+
+void printPlane(Plane plane){
+    printf("Max X is between %i and %i\n", plane.MAX_X[0], plane.MAX_X[1]);
+    printf("Max y is between %i and %i\n", plane.MAX_Y[0], plane.MAX_Y[1]);
+    printf("Number of coordinates to generate: %i\n", plane.NUM_PT);
+    printf("Remaining number of generations: %i\n \n", plane.generation);
 }
 /////////////////////////////////////////////////
 //
@@ -116,27 +136,42 @@ char** readFile(char* filename){
         index++;
     }
     lines[index+1] = NULL;
-    printf("Lines: %i \n", index+1);
     fclose(fp);
     return lines;
 }
 
-int* getParameters(char* line[], int* size){
+Plane getParameters(char* line[]){
     // Check line by line for the presence of a commented line. If the line is commented
     // ignore the line, else add the parameters to the parameters array. 
-    
-    // Passing in size is a dirty trick to pass back the size of an int array in C
-    
-    int* parameters = malloc(sizeof(int)*20);
+    Plane plane;
+    int** instance = malloc(sizeof(int[2])*100);
+    plane.MAX_X[0] = 0;
+    plane.MAX_Y[0] = 0;
+    plane.instance_size = 0;
+    int end;
+   
     int index=0;
     for(int i=0; line[i] != NULL; i++){
         if(!isComment(line[i])){
-            parameters[index] = *splitNumbers(line[i]);
+            if(index == 0){
+                int* temp = splitNumbers(line[i]);
+                plane.MAX_X[1] = temp[0];
+                plane.MAX_Y[1] = temp[1];
+            }
+            if(index == 1){
+                int* temp = splitNumbers(line[i]);
+                plane.NUM_PT = temp[0];
+            }
+            if(index >= 2 && strcmp(line[i], "\0") !=0){
+                int* temp = splitNumbers(line[i]);
+                end = plane.instance_size++;
+                instance[index-2] = temp;
+            }
             index++;
         }
     }
-    *size = index;
-    return parameters;
+    plane.instance = instance;
+   return plane;
 }
 
 /////////////////////////////////////////////////
@@ -147,21 +182,25 @@ int* getParameters(char* line[], int* size){
 int main(int argc, char **argv){
     char* filename; 
     char** lines;
-    int size=0;
-    /* int max_x, max_y; */
-    /* int num_pt; */
-    /* int num_to_generate; */
+    Plane plane;
+    
+    //initiallize plane.MAX_X and MAX_Y values to a minimum of 0
+    
     int* parameters = 0;
-    printf("%i \n", argc);
     if(argc >= 2){
         filename = getFilename(argv, argc);
         lines = readFile(filename);
         free(lines);
-        parameters = getParameters(lines, &size);
+        plane = getParameters(lines);
     }else {
-        parameters =  getOptions();
+       // parameters =  getOptions();
     }
-    printf("Size = %i\n", size);
-    printf("%i %i %i %i %i\n", parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]);
+    
+    /* printf("%i %i %i %i %i\n", parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]); */
+    printPlane(plane);
+    printf("Instance size = %i\n", plane.instance_size);
+    for(int i=0; i < plane.instance_size; i++){
+        printf("instance: %i %i \n", plane.instance[i][0], plane.instance[i][1]);
+    }
     return 0;
 }
