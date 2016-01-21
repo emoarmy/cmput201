@@ -197,9 +197,13 @@ bool checkInstances(Plane plane){
 
 bool PlanetoFile(char* filename, Plane plane){
     FILE *newFile;
+    char toChar[30];
     newFile = fopen(filename, "w+");
-    
-    fwrite(plane.MAX_X, sizeof(plane.MAX_X), 1, newFile);
+    int MAX_X = plane.MAX_X[1];
+    sprintf(toChar, "%d", MAX_X);
+    printf("String: %s\n", toChar);
+    fwrite(toChar, sizeof(char), 4, newFile);
+    fclose(newFile);
     return true;
 }
 /////////////////////////////////////////////////
@@ -236,7 +240,7 @@ int main(int argc, char **argv){
     printPlane(plane);
     printf("Instance size = %i\n", plane.instance_size);
 
-    PlanetoFile("newFile.txt", plane);
+    PlanetoFile("newFilez.txt", plane);
     
     return 0;
 }
