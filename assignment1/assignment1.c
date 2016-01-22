@@ -200,9 +200,13 @@ bool PlanetoFile(char* filename, Plane plane){
     char toChar[30];
     newFile = fopen(filename, "w+");
     int MAX_X = plane.MAX_X[1];
-    sprintf(toChar, "%d", MAX_X);
+    sprintf(toChar, "%d\t", MAX_X);
     printf("String: %s\n", toChar);
     fwrite(toChar, sizeof(char), 4, newFile);
+    
+    sprintf(toChar, "%d\n", plane.MAX_Y[1]);
+    fwrite(toChar, sizeof(char), 4, newFile);
+    
     fclose(newFile);
     return true;
 }
