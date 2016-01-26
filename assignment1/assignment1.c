@@ -2,10 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include <time.h>
 
 FILE *fp;
-
 /////////////////////////////////////////////////
 //
 // STRUCTS
@@ -197,16 +196,27 @@ bool checkInstances(Plane plane){
 
 bool PlanetoFile(char* filename, Plane plane){
     FILE *newFile;
+
+    //the variable we're going to use to print everything
     char toChar[30];
     newFile = fopen(filename, "w+");
+
+    //print MAX_X and MAX_Y
     int MAX_X = plane.MAX_X[1];
     sprintf(toChar, "%d\t", MAX_X);
-    printf("String: %s\n", toChar);
-    fwrite(toChar, sizeof(char), 4, newFile);
-    
+    fwrite(toChar, sizeof(char*), 1, newFile);
     sprintf(toChar, "%d\n", plane.MAX_Y[1]);
-    fwrite(toChar, sizeof(char), 4, newFile);
+    fwrite(toChar, sizeof(char*), 1, newFile);
+
     
+    
+    for(int i=0; i < plane.NUM_PT; i++){
+        printf("Generated instance %i\t%i\n", plane.instance[i][0], plane.instance[i][1]);
+        sprintf(toChar, "%d \t", plane.instance[i][0]);
+        fwrite(toChar, sizeof(char*), 1, newFile);
+        sprintf(toChar, "%d \n", plane.instance[i][1]);
+        fwrite(toChar, sizeof(toChar), 1, newFile);
+    }
     fclose(newFile);
     return true;
 }
@@ -218,6 +228,37 @@ bool PlanetoFile(char* filename, Plane plane){
 int genCoordinate(int min, int max){
     return (rand() % (max-min+1) + min);
 }
+
+int* genCoordinates(int* x_array, int* y_array ){
+    int* coordinates = malloc(sizeof(int)*2);
+    coordinates[0] = genCoordinate(x_array[0], x_array[1]);
+    coordinates[1] = genCoordinate(y_array[0], y_array[1]);
+    //printf("Coordinates %i %i\n", coordinates[0], coordinates[1]); 
+    
+    return coordinates;
+}
+
+int** genInstance(int numberOfPoints, int* x_array, int* y_array){
+    int** instance = malloc(sizeof(int)*2*numberOfPoints);
+    
+    for(int i=0; i<numberOfPoints; i++){
+        instance[i] = genCoordinates(x_array, y_array);
+        //printf("Instance %i %i\n", instance[i][0], instance[i][1]);
+    }
+    return instance;
+}
+
+bool checkUnique(int** instance,  int size){
+    for(int i=0; i<size; i++){
+        
+        for(int j=i+1; j<size; j++){
+            if(instance[i][0] == instance[j][0] && instance[i][1] == instance[j][1]){
+                return false;
+            }
+        }
+    }
+    return true;
+}
 /////////////////////////////////////////////////
 //
 // MAIN
@@ -227,23 +268,25 @@ int main(int argc, char **argv){
     char* filename; 
     char** lines;
     Plane plane;
-    
-    //initiallize plane.MAX_X and MAX_Y values to a minimum of 0
-    
-    int* parameters = 0;
+    //initiallize rand() with current time
+    srand(time(NULL));
     if(argc >= 2){
         filename = getFilename(argv, argc);
         lines = readFile(filename);
         free(lines);
         plane = getParameters(lines);
     }else {
-       // parameters =  getOptions();
+        plane = getOptions();
+        plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y);
+        free(plane.instance);
     }
-    
-    /* printf("%i %i %i %i %i\n", parameters[0], parameters[1], parameters[2], parameters[3], parameters[4]); */
+    for(int i=0; i < plane.NUM_PT; i++){
+        printf("Generated instance %i\t%i\n", plane.instance[i][0], plane.instance[i][1]);
+    }
     printPlane(plane);
+    
     printf("Instance size = %i\n", plane.instance_size);
-
+    
     PlanetoFile("newFilez.txt", plane);
     
     return 0;
