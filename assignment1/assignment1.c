@@ -240,21 +240,22 @@ int* genCoordinates(int* x_array, int* y_array ){
 
 int** genInstance(int numberOfPoints, int* x_array, int* y_array){
     int** instance = malloc(sizeof(int)*2*numberOfPoints);
-    
+    int* coordinates;
     for(int i=0; i<numberOfPoints; i++){
-        instance[i] = genCoordinates(x_array, y_array);
+        coordinates = genCoordinates(x_array, y_array);
+        while(checkUnique(coordinates, instance, i-1) == false){
+            coordinates = genCoordinates(x_array, y_array);
+        }
+        instance[i] = coordinates;
         //printf("Instance %i %i\n", instance[i][0], instance[i][1]);
     }
     return instance;
 }
 
-bool checkUnique(int** instance,  int size){
+bool checkUnique(int* coordinate, int** instance,  int size){
     for(int i=0; i<size; i++){
-        
-        for(int j=i+1; j<size; j++){
-            if(instance[i][0] == instance[j][0] && instance[i][1] == instance[j][1]){
-                return false;
-            }
+        if(coordinate[0] == instance[i][0] && coordinate[1] == instance[i][1]){
+            return false;
         }
     }
     return true;
@@ -264,14 +265,20 @@ bool checkUnique(int** instance,  int size){
 // MAIN
 //
 ////////////////////////////////////////////////
+
+// Must check for errors in instance, if so output error to console.
+// If option output is given, output file to a text
+// If option output is not given output to screen
 int main(int argc, char **argv){
     char* filename; 
     char** lines;
     Plane plane;
+    char* options;
     //initiallize rand() with current time
     srand(time(NULL));
     if(argc >= 2){
         filename = getFilename(argv, argc);
+        options = getOption(argv, argc);
         lines = readFile(filename);
         free(lines);
         plane = getParameters(lines);
