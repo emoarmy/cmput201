@@ -40,7 +40,7 @@ char* getFilename(char** array, int length){
     char* filename;
     filename = NULL;
 
-        for(int i=0; i <= length; i++){
+        for(int i=0; i < length; i++){
             if(strcmp(array[i], "-i") == 0){
                 filename = array[i+1];
                 break;
@@ -49,7 +49,20 @@ char* getFilename(char** array, int length){
     return filename;
 }
 
-Plane getOptions(void){
+char* getOption(char** array, int length){
+    char* option;
+    option = NULL;
+
+        for(int i=0; i < length; i++){
+            if(strcmp(array[i], "-o") == 0){
+                option = array[i+1];
+                break;
+            }
+        }
+   return option;
+}
+
+Plane getParams(void){
     // Prompts user for the input to construct the circuitry info
     // and returns an array of characters
     Plane plane;
@@ -60,7 +73,7 @@ Plane getOptions(void){
     int* num_pt;
     int* num_inst;
 
-    
+
     max_x_y = getInput("Enter the circuit board size MAX_X MAX_Y: ", 2);
     num_pt = getInput("Enter the number of points NUM_PT: ", 1);
     num_inst = getInput("Enter the number of random instances to be generated: ", 1);
@@ -70,7 +83,7 @@ Plane getOptions(void){
     plane.MAX_Y[1] = max_x_y[1];
     plane.NUM_PT = num_pt[0];
     options[3] = num_inst[0];
- 
+
     free(max_x_y);
     free(num_pt);
     free(num_inst);
@@ -115,12 +128,6 @@ int* splitNumbers(char* line){
    return array;
 }
 
-void printPlane(Plane plane){
-    printf("Max X is between %i and %i\n", plane.MAX_X[0], plane.MAX_X[1]);
-    printf("Max y is between %i and %i\n", plane.MAX_Y[0], plane.MAX_Y[1]);
-    printf("Number of coordinates to generate: %i\n", plane.NUM_PT);
-    printf("Remaining number of generations: %i\n \n", plane.generation);
-}
 /////////////////////////////////////////////////
 //
 // SETTERS
@@ -130,7 +137,7 @@ char** readFile(char* filename){
     size_t nBytes = 255;
     char **lines = malloc(1000*sizeof(char*));
     lines[0] = NULL;
-    
+
     fp = fopen(filename, "rt");
     if (fp == NULL){
            exit(EXIT_FAILURE);
@@ -147,14 +154,14 @@ char** readFile(char* filename){
 
 Plane getParameters(char* line[]){
     // Check line by line for the presence of a commented line. If the line is commented
-    // ignore the line, else add the parameters to the parameters array. 
+    // ignore the line, else add the parameters to the parameters array.
     Plane plane;
     int** instance = malloc(sizeof(int[2])*100);
     plane.MAX_X[0] = 0;
     plane.MAX_Y[0] = 0;
     plane.instance_size = 0;
     int end;
-   
+
     int index=0;
     for(int i=0; line[i] != NULL; i++){
         if(!isComment(line[i])){
@@ -189,37 +196,61 @@ bool checkInstances(Plane plane){
     for(int i=0; i < plane.instance_size; i++){
         if(isBetween(plane.instance[i][0], plane.MAX_X[0] , plane.MAX_X[1]) && isBetween(plane.instance[i][0], plane.MAX_X[0] , plane.MAX_X[1])){
             return true;
-        } else{
         }
     }
+    return false;
 }
 
-bool PlanetoFile(char* filename, Plane plane){
+bool planeToFile(char* filename, Plane plane){
     FILE *newFile;
 
     //the variable we're going to use to print everything
-    char toChar[30];
     newFile = fopen(filename, "w+");
 
     //print MAX_X and MAX_Y
-    int MAX_X = plane.MAX_X[1];
-    sprintf(toChar, "%d\t", MAX_X);
-    fwrite(toChar, sizeof(char*), 1, newFile);
-    sprintf(toChar, "%d\n", plane.MAX_Y[1]);
-    fwrite(toChar, sizeof(char*), 1, newFile);
+    fprintf(newFile, "#area [0, MAX_X] x [0, MAX_Y]\n");
+    fprintf(newFile, "%d\t%d\n", plane.MAX_X[1], plane.MAX_Y[1]);
 
-    
-    
+    //print number of points Generated
+    fprintf(newFile, "#number of points NUM_PT\n");
+    fprintf(newFile, "%d\n", plane.NUM_PT);
+
+    fprintf(newFile, "#coordinates\n");
     for(int i=0; i < plane.NUM_PT; i++){
-        printf("Generated instance %i\t%i\n", plane.instance[i][0], plane.instance[i][1]);
-        sprintf(toChar, "%d \t", plane.instance[i][0]);
-        fwrite(toChar, sizeof(char*), 1, newFile);
-        sprintf(toChar, "%d \n", plane.instance[i][1]);
-        fwrite(toChar, sizeof(toChar), 1, newFile);
+        fprintf(newFile, "%d\t%d\n", plane.instance[i][0], plane.instance[i][1]);
     }
+    fprintf(newFile, "#end of instance\n");
     fclose(newFile);
     return true;
 }
+
+void planeToTerminal(Plane plane){
+
+    //print MAX_X and MAX_Y
+    printf("#area [0, MAX_X] x [0, MAX_Y]\n");
+    printf("%d\t%d\n", plane.MAX_X[1], plane.MAX_Y[1]);
+
+    //print number of points Generated
+    printf("#number of points NUM_PT\n");
+    printf("%d\n", plane.NUM_PT);
+
+    printf("#coordinates\n");
+    for(int i=0; i < plane.NUM_PT; i++){
+        printf("%d\t%d\n", plane.instance[i][0], plane.instance[i][1]);
+    }
+    printf("#end of instance\n");
+}
+
+
+void printPlane(Plane plane, char* options){
+    printf("Options: %s", options);
+    if(options != NULL && strcmp(options, "output") == 0 ){
+        planeToFile("newFilez.txt", plane);
+    } else {
+        planeToTerminal(plane);
+    }
+}
+
 /////////////////////////////////////////////////
 //
 // GEN DATA
@@ -233,13 +264,22 @@ int* genCoordinates(int* x_array, int* y_array ){
     int* coordinates = malloc(sizeof(int)*2);
     coordinates[0] = genCoordinate(x_array[0], x_array[1]);
     coordinates[1] = genCoordinate(y_array[0], y_array[1]);
-    //printf("Coordinates %i %i\n", coordinates[0], coordinates[1]); 
-    
+
     return coordinates;
 }
 
+bool checkUnique(int* coordinate, int** instance,  int size){
+    for(int i=0; i<size; i++){
+        if(coordinate[0] == instance[i][0] && coordinate[1] == instance[i][1]){
+            printf("Not Unique");
+            return false;
+        }
+    }
+    return true;
+}
+
 int** genInstance(int numberOfPoints, int* x_array, int* y_array){
-    int** instance = malloc(sizeof(int)*2*numberOfPoints);
+    int** instance = malloc(sizeof(int)*2*1000);
     int* coordinates;
     for(int i=0; i<numberOfPoints; i++){
         coordinates = genCoordinates(x_array, y_array);
@@ -252,14 +292,6 @@ int** genInstance(int numberOfPoints, int* x_array, int* y_array){
     return instance;
 }
 
-bool checkUnique(int* coordinate, int** instance,  int size){
-    for(int i=0; i<size; i++){
-        if(coordinate[0] == instance[i][0] && coordinate[1] == instance[i][1]){
-            return false;
-        }
-    }
-    return true;
-}
 /////////////////////////////////////////////////
 //
 // MAIN
@@ -270,31 +302,36 @@ bool checkUnique(int* coordinate, int** instance,  int size){
 // If option output is given, output file to a text
 // If option output is not given output to screen
 int main(int argc, char **argv){
-    char* filename; 
+    char* filename = NULL;
     char** lines;
     Plane plane;
-    char* options;
+    char* options = NULL;
     //initiallize rand() with current time
     srand(time(NULL));
+
+    // Cheching for arguments, if they are greater than or equal to two, assume
+    // their are options and a filename being passed in trying to be passed in.
     if(argc >= 2){
         filename = getFilename(argv, argc);
         options = getOption(argv, argc);
-        lines = readFile(filename);
-        free(lines);
-        plane = getParameters(lines);
-    }else {
-        plane = getOptions();
+    }
+    
+    // Grab Data
+    if (filename == NULL){
+        plane = getParams();
         plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y);
         free(plane.instance);
+    } else {
+        lines = readFile(filename);
+        free(lines);
+        plane = getParameters(lines);   
     }
-    for(int i=0; i < plane.NUM_PT; i++){
-        printf("Generated instance %i\t%i\n", plane.instance[i][0], plane.instance[i][1]);
-    }
-    printPlane(plane);
+    
+    // printPlane needs to check for option type.
+    printPlane(plane, options);
     
     printf("Instance size = %i\n", plane.instance_size);
-    
-    PlanetoFile("newFilez.txt", plane);
-    
+
     return 0;
+
 }
