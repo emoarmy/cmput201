@@ -1,2 +1,0 @@
-We are writing to a file
-Here is the second line.

@@ -18,6 +18,7 @@ typedef struct
     int** instance;
     int instance_size;
     int generation;
+    int total_gen;
 } Plane;
 
 /////////////////////////////////////////////////
@@ -55,6 +56,15 @@ int* splitNumbers(char* line){
         array = NULL;
     }
    return array;
+}
+
+
+char* genFilename(int numberOfPoints, int index){
+    char* string = malloc(sizeof(char)*100);
+    //snprintf(string, sizeof(string), "instance%.3i_%.3i.txt", numberOfPoints, index);
+    //printf("plane generation %i\n", index);
+    asprintf(&string, "instance%.3i_%.3i.txt", numberOfPoints, index);
+    return string;
 }
 
 /////////////////////////////////////////////////
@@ -97,13 +107,26 @@ char* getOption(char** array, int length){
         }
    return option;
 }
-
+int getGeneration(char* filename){
+    char* genChar;
+    char* ptr;
+    int index;
+    ptr = strchr(filename, '_');
+    if(ptr != NULL){
+        index = ptr - filename;
+        asprintf(&genChar, "%i%i%i", filename[index+1], filename[index+2], filename[index+3]);
+    } else {
+        return -1;
+    }
+    return atoi(genChar);
+}
 Plane getParams(void){
     // Prompts user for the input to construct the circuitry info
     // and returns an array of characters
     Plane plane;
     plane.MAX_X[0] = 0;
     plane.MAX_Y[0] = 0;
+    plane.generation = 1;
 
     int* max_x_y;
     int* num_pt;
@@ -114,11 +137,11 @@ Plane getParams(void){
     num_pt = getInput("Enter the number of points NUM_PT: ", 1);
     num_inst = getInput("Enter the number of random instances to be generated: ", 1);
     plane.instance_size=0;
-    static int options[4];
+
     plane.MAX_X[1] = max_x_y[0];
     plane.MAX_Y[1] = max_x_y[1];
     plane.NUM_PT = num_pt[0];
-    options[3] = num_inst[0];
+    plane.total_gen = num_inst[0];
 
     free(max_x_y);
     free(num_pt);
@@ -201,7 +224,7 @@ bool checkInstances(Plane plane){
 
 bool planeToFile(char* filename, Plane plane){
     FILE *newFile;
-
+    printf("File name = %s\n", filename);
     //the variable we're going to use to print everything
     newFile = fopen(filename, "w+");
 
@@ -242,7 +265,8 @@ void planeToTerminal(Plane plane){
 void printPlane(Plane plane, char* options){
     printf("Options: %s\n", options);
     if(options != NULL && strcmp(options, "output") == 0 ){
-        planeToFile("newFilez.txt", plane);
+        char* filename = genFilename(plane.NUM_PT, plane.generation);
+        planeToFile(filename, plane);
     } else {
         planeToTerminal(plane);
     }
@@ -289,11 +313,6 @@ int** genInstance(int numberOfPoints, int* x_array, int* y_array){
     return instance;
 }
 
-char* genFilename(int numberOfPoints, int index){
-    char* string = malloc(sizeof(char)*100);
-    snprintf(string, sizeof(string), "instance%.3i_%.3i.txt", numberOfPoints, index);
-    return string;
-}
 /////////////////////////////////////////////////
 //
 // MAIN
@@ -310,7 +329,6 @@ int main(int argc, char **argv){
     char* options = NULL;
     //initiallize rand() with current time
     srand(time(NULL));
-    plane.generation = 1;
 
     // Cheching for arguments, if they are greater than or equal to two, assume
     // their are options and a filename being passed in trying to be passed in.
@@ -318,19 +336,23 @@ int main(int argc, char **argv){
         filename = getFilename(argv, argc);
         options = getOption(argv, argc);
     }
-
     // Grab Data
     if (filename == NULL){
-        plane = getParams();;
+        plane = getParams();
+        plane.instance_size = plane.NUM_PT;
     } else {
         lines = readFile(filename);
+        //plane.generation = getGeneration(filename);
         free(lines);
         plane = getParameters(lines);
     }
-    while(plane.generations < 
+    /* while(plane.generation < plane.total_gen){ */
+    /*     plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y); */
+    /*     printPlane(plane, options); */
+    /*     plane.generation++; */
+    /* } */
     // printPlane needs to check for option type.
-    printPlane(plane, options);
-
+    
     printf("Instance size = %i\n", plane.instance_size);
     printf("Filename: %s\n", genFilename(plane.NUM_PT, plane.generation));
     return 0;
