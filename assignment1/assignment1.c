@@ -47,7 +47,6 @@ int* splitNumbers(char* line){
     char **delim;
     char* argv[10];
     delim = argv;
-    printf("Line is: %s", line);
     if(strcmp(&line[0], " ") != 0){
         for(int i=0; (*delim = strsep(&line, " \t")) != NULL; i++){
             array[i] = atoi(*delim);
@@ -61,8 +60,6 @@ int* splitNumbers(char* line){
 
 char* genFilename(int numberOfPoints, int index){
     char* string = malloc(sizeof(char)*100);
-    //snprintf(string, sizeof(string), "instance%.3i_%.3i.txt", numberOfPoints, index);
-    //printf("plane generation %i\n", index);
     asprintf(&string, "instance%.3i_%.3i.txt", numberOfPoints, index);
     return string;
 }
@@ -114,11 +111,12 @@ int getGeneration(char* filename){
     ptr = strchr(filename, '_');
     if(ptr != NULL){
         index = ptr - filename;
-        asprintf(&genChar, "%i%i%i", filename[index+1], filename[index+2], filename[index+3]);
+        asprintf(&genChar, "%c%c%c", filename[index+1], filename[index+2], filename[index+3]);
     } else {
         return -1;
     }
-    return atoi(genChar);
+    int gen = atoi(genChar);
+    return gen;
 }
 Plane getParams(void){
     // Prompts user for the input to construct the circuitry info
@@ -126,7 +124,7 @@ Plane getParams(void){
     Plane plane;
     plane.MAX_X[0] = 0;
     plane.MAX_Y[0] = 0;
-    plane.generation = 1;
+    plane.generation = 0;
 
     int* max_x_y;
     int* num_pt;
@@ -174,7 +172,7 @@ char** readFile(char* filename){
     return lines;
 }
 
-Plane getParameters(char* line[]){
+Plane getFileParameters(char* line[]){
     // Check line by line for the presence of a commented line. If the line is commented
     // ignore the line, else add the parameters to the parameters array.
     Plane plane;
@@ -182,7 +180,7 @@ Plane getParameters(char* line[]){
     plane.MAX_X[0] = 0;
     plane.MAX_Y[0] = 0;
     plane.instance_size = 0;
-    
+    plane.total_gen = 0;
     int index=0;
     for(int i=0; line[i] != NULL; i++){
         if(!isComment(line[i])){
@@ -212,22 +210,12 @@ Plane getParameters(char* line[]){
 // Print Data
 //
 ////////////////////////////////////////////////
-bool checkInstances(Plane plane){
-    int incorrect[plane.instance_size];
-    for(int i=0; i < plane.instance_size; i++){
-        if(isBetween(plane.instance[i][0], plane.MAX_X[0] , plane.MAX_X[1]) && isBetween(plane.instance[i][0], plane.MAX_X[0] , plane.MAX_X[1])){
-            return true;
-        }
-    }
-    return false;
-}
 
 bool planeToFile(char* filename, Plane plane){
     FILE *newFile;
     printf("File name = %s\n", filename);
     //the variable we're going to use to print everything
     newFile = fopen(filename, "w+");
-
     //print MAX_X and MAX_Y
     fprintf(newFile, "#area [0, MAX_X] x [0, MAX_Y]\n");
     fprintf(newFile, "%d\t%d\n", plane.MAX_X[1], plane.MAX_Y[1]);
@@ -263,10 +251,10 @@ void planeToTerminal(Plane plane){
 }
 
 void printPlane(Plane plane, char* options){
-    printf("Options: %s\n", options);
     if(options != NULL && strcmp(options, "output") == 0 ){
         char* filename = genFilename(plane.NUM_PT, plane.generation);
         planeToFile(filename, plane);
+        free(filename);
     } else {
         planeToTerminal(plane);
     }
@@ -308,11 +296,12 @@ int** genInstance(int numberOfPoints, int* x_array, int* y_array){
             coordinates = genCoordinates(x_array, y_array);
         }
         instance[i] = coordinates;
-        //printf("Instance %i %i\n", instance[i][0], instance[i][1]);
     }
     return instance;
 }
-
+bool checkPlaneInstance(Plane plane){
+    return (plane.NUM_PT == plane.instance_size);
+}
 /////////////////////////////////////////////////
 //
 // MAIN
@@ -327,6 +316,7 @@ int main(int argc, char **argv){
     char** lines;
     Plane plane;
     char* options = NULL;
+    bool correctSize = true;
     //initiallize rand() with current time
     srand(time(NULL));
 
@@ -336,23 +326,35 @@ int main(int argc, char **argv){
         filename = getFilename(argv, argc);
         options = getOption(argv, argc);
     }
+
     // Grab Data
     if (filename == NULL){
         plane = getParams();
         plane.instance_size = plane.NUM_PT;
     } else {
         lines = readFile(filename);
-        //plane.generation = getGeneration(filename);
+        if(lines[0] == NULL){
+            printf("File not found");
+            return -1;
+        }
+        plane.generation = getGeneration(filename);
         free(lines);
-        plane = getParameters(lines);
+        plane = getFileParameters(lines);
+        correctSize = checkPlaneInstance(plane);
+        printf("Plane is of correct size: %i\n", correctSize);
     }
-    /* while(plane.generation < plane.total_gen){ */
-    /*     plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y); */
-    /*     printPlane(plane, options); */
-    /*     plane.generation++; */
-    /* } */
-    // printPlane needs to check for option type.
     
+     if(!correctSize){
+            printf("File is corrupted, number of instances do not match number of points needed to be generated");
+        return -2;
+    }
+    
+    while(plane.generation < plane.total_gen){
+        plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y);
+        printPlane(plane, options);
+        plane.generation++;
+    }
+
     printf("Instance size = %i\n", plane.instance_size);
     printf("Filename: %s\n", genFilename(plane.NUM_PT, plane.generation));
     return 0;
