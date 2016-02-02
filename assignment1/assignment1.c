@@ -126,7 +126,7 @@ int getGeneration(char* filename){
     int gen = atoi(genChar);
     return gen;
 }
-Plane getParams(void){
+Plane getParameters(void){
     // Prompts user for the input to construct planes
     // and returns an array of ints
     Plane plane;
@@ -143,7 +143,7 @@ Plane getParams(void){
     num_pt = getInput("Enter the number of points NUM_PT: ", 1);
     num_inst = getInput("Enter the number of random instances to be generated: ", 1);
     plane.instance_size=0;
-    
+
     //Error checking to ensure, that we can generate as many unique points as the user requires
     while(num_pt[0] > max_x_y[0]+1 * max_x_y[1]+1){
         printf("Please enter a number of points to enter that is less than Max X+1 * Max Y+1");
@@ -195,10 +195,10 @@ Plane getFileParameters(char* line[]){
     // Check line by line for the presence of a commented line. If the line is commented
     // ignore the line, else add the parameters to the parameters array.
     Plane plane;
-    
+
     // I need to learn how realloc works. This could cause bugs if I am reading in a file that has more than 100 instances
     int** instance = malloc(sizeof(int[2])*100);
-    
+
     //Initialize variable
     plane.MAX_X[0] = 0;
     plane.MAX_Y[0] = 0;
@@ -206,7 +206,7 @@ Plane getFileParameters(char* line[]){
     plane.total_gen = 0;
     int index=0;
     int* temp;
-    
+
     // Read the the line array until it reaches null
     for(int i=0; line[i] != NULL; i++){
         if(!isComment(line[i])){
@@ -302,7 +302,7 @@ int genCoordinate(int min, int max){
 
 int* genCoordinates(int* x_array, int* y_array ){
     // This code is malloc and needs to call free
-    
+
     //Uses the implicit min of the array and the max as supplied by the user to gen a new x and y coordinate
     int* coordinates = malloc(sizeof(int)*2);
     coordinates[0] = genCoordinate(x_array[0], x_array[1]);
@@ -335,7 +335,7 @@ int** genInstance(int numberOfPoints, int* x_array, int* y_array){
             coordinates = genCoordinates(x_array, y_array);
         }
         instance[i] = coordinates;
-        
+
     }
     // Needs to free the malloc
     free(coordinates);
@@ -372,18 +372,18 @@ int main(int argc, char **argv){
 
     // Grab Data
     if (filename == NULL){
-        plane = getParams();
+        plane = getParameters();
         plane.instance_size = plane.NUM_PT;
     } else {
         lines = readFile(filename);
-        
+
         // Check to see if a file was succesffully parsed
         if(lines == NULL){
             printf("File not found\n");
             return -1;
         }
         plane.generation = getGeneration(filename);
-        
+
         plane = getFileParameters(lines);
         correctSize = checkPlaneInstance(plane);
         free(lines);
@@ -394,7 +394,7 @@ int main(int argc, char **argv){
         printf("Now exiting...\n");
         return -2;
     }
-    
+
     // A hack to test if we opened a file
     if(filename != NULL){
         printPlane(plane, options);
@@ -404,7 +404,7 @@ int main(int argc, char **argv){
         printPlane(plane, options);
         plane.generation++;
     }
- 
+
     free(plane.instance);
     return 0;
 }
