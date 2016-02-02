@@ -1,11 +1,11 @@
 /* assignment1.c
-*  This program performs two functions. 1. It validates instance files that
+*  This program performs two functions. 1. It validates instance files that 
 *  are passed in through the terminal using -i. 2. It generates instance
 *  files based off user input.
 *
 *  Assumptions: That the user is not intentionally malicious and they try to enter
 *  positive integers as input. If they try to enter strings or other weird characters, bad
-*  things could happen. It is also assumed that any file coordinates are valid coordinates
+*  things could happen.
 *
 * Copyright 2016, Justin Barclay.
 * All rights reserved.
@@ -41,36 +41,6 @@ typedef struct
 // HELPERS
 //
 ////////////////////////////////////////////////
-int* splitNumbers(char* line){
-    //Split numbers in a string based on the \t delimiter"
-    int *array = malloc(sizeof(int)*2) ; // Hard coded because each line in the sample file has at most 2 ints.
-    char** strings;
-    // max size of any string
-    char* astring[10];
-    strings = astring;
-    if(strcmp(&line[0], " ") != 0){
-        for(int i=0; (*strings = strsep(&line, " \t")) != NULL; i++){
-            array[i] = atoi(*strings);
-        }
-    } else {
-        array = NULL;
-    }
-   return array;
-}
-
-
-char* genFilename(int numberOfPoints, int index){
-    //returns a filename as a string based on the number of points and the instance number
-    char* string = malloc(sizeof(char)*100);
-    asprintf(&string, "instance%.3i_%.3i.txt", numberOfPoints, index);
-    return string;
-}
-
-/////////////////////////////////////////////////
-//
-// VALIDATE
-//
-////////////////////////////////////////////////
 bool isBetween(int between, int lower, int upper){
     //return true if the first variable is between the second two variables
     // this does no error checking for incorrect input
@@ -89,35 +59,28 @@ bool isComment(char* line){
     }
 }
 
-bool checkMax(int max){
-    return (max > 0);
-}
-
-bool checkUnique(int* coordinate, int** instance,  int size){
-
-    // A quick and dirty way to check if a given coordinate is unique.
-    // It iterates through the passed in instance and returns false if both
-    // x and y coordinates match one in the instance
-    for(int i=0; i<size; i++){
-        if(coordinate[0] == instance[i][0] && coordinate[1] == instance[i][1]){
-            return false;
+int* splitNumbers(char* line){
+    //Split numbers in a string based on the \t delimiter"
+    int *array = malloc(sizeof(int)*2) ; // Hard coded because each line in the sample file has at most 2 ints.
+    char **delim;
+    char* argv[10];
+    delim = argv;
+    if(strcmp(&line[0], " ") != 0){
+        for(int i=0; (*delim = strsep(&line, " \t")) != NULL; i++){
+            array[i] = atoi(*delim);
         }
+    } else {
+        array = NULL;
     }
-    return true;
-}
-bool checkPlaneInstance(Plane plane){
-    return(plane.instance_size == plane.NUM_PT);
+   return array;
 }
 
-bool checkFile(Plane plane){
-        if(!checkMax(plane.MAX_X[1]) || !checkMax(plane.MAX_Y[1])){
-            return false;
-        }
-        if(!checkPlaneInstance(plane)){
-            return false;
-        }
-        return true;
 
+char* genFilename(int numberOfPoints, int index){
+    //returns a filename as a string based on the number of points and the instance number
+    char* string = malloc(sizeof(char)*100);
+    asprintf(&string, "instance%.3i_%.3i.txt", numberOfPoints, index);
+    return string;
 }
 
 /////////////////////////////////////////////////
@@ -127,7 +90,7 @@ bool checkFile(Plane plane){
 ////////////////////////////////////////////////
 int* getInput(char* prompt, int num_of_values){
     // Prompts user for input and pattern matches characters until it finds as many as needed and returns the option int array
-    int *option = malloc(sizeof(int)*num_of_values);
+    int *option = malloc(sizeof(int)*2);
     printf("%s", prompt);
     for(int i = 0; i < num_of_values; i++){
         scanf("%d", &option[i]);
@@ -198,7 +161,7 @@ Plane getParameters(void){
 
     //Error checking to ensure, that we can generate as many unique points as the user requires
     while(num_pt[0] > max_x_y[0]+1 * max_x_y[1]+1){
-        printf("Please enter a number of points less than %i\n", max_x_y[0]+1 * max_x_y[1]+1);
+        printf("Please enter a valid number of points. That is, NUM_PT has to be less than Max X+1 * Max Y+1\n");
         num_pt = getInput("Enter the number of points NUM_PT: ", 1);
     }
 
@@ -216,6 +179,11 @@ Plane getParameters(void){
     return plane;
 }
 
+/////////////////////////////////////////////////
+//
+// SETTERS
+//
+////////////////////////////////////////////////
 char** readFile(char* filename){
     // Takes a file name, and searches for that file in the same direcotry as the program is being executed
     // If it fails, to find a file it returns NULL otherwise it returns an array of \n terminated strings
@@ -331,7 +299,6 @@ void printPlane(Plane plane, char* options){
     if(options != NULL && strcmp(options, "output") == 0 ){
         char* filename = genFilename(plane.NUM_PT, plane.generation);
         planeToFile(filename, plane);
-        printf("%s created.\n", filename);
         free(filename);
     } else {
         planeToTerminal(plane);
@@ -359,6 +326,19 @@ int* genCoordinates(int* x_array, int* y_array ){
     return coordinates;
 }
 
+bool checkUnique(int* coordinate, int** instance,  int size){
+
+    // A quick and dirty way to check if a given coordinate is unique.
+    // It iterates through the passed in instance and returns false if both
+    // x and y coordinates match one in the instance
+    for(int i=0; i<size; i++){
+        if(coordinate[0] == instance[i][0] && coordinate[1] == instance[i][1]){
+            return false;
+        }
+    }
+    return true;
+}
+
 int** genInstance(int numberOfPoints, int* x_array, int* y_array){
     // Takes in 3 parametes, number of points to generate, an array with min and max x coordinates
     // and an array with min and man y coordinates;
@@ -376,7 +356,10 @@ int** genInstance(int numberOfPoints, int* x_array, int* y_array){
     free(coordinates);
     return instance;
 }
-
+bool checkPlaneInstance(Plane plane){
+    // A quick function that checks if the instance is of required size
+    return (plane.NUM_PT == plane.instance_size);
+}
 /////////////////////////////////////////////////
 //
 // MAIN
@@ -386,12 +369,12 @@ int** genInstance(int numberOfPoints, int* x_array, int* y_array){
 // Must check for errors in instance, if so output error to console.
 // If option output is given, output file to a text
 // If option output is not given output to screen
-int main(int argc, char** argv){
+int main(int argc, char **argv){
     char* filename = NULL;
     char** lines;
     Plane plane;
     char* options = NULL;
-    bool correctFile = true;
+    bool correctSize = true;
     //initiallize rand() with current time
     srand(time(NULL));
 
@@ -418,12 +401,12 @@ int main(int argc, char** argv){
         plane.generation = getGeneration(filename);
 
         plane = getFileParameters(lines);
-        correctFile = checkFile(plane);
+        correctSize = checkPlaneInstance(plane);
         free(lines);
     }
     // Ensure instances is of the correct size;
-    if(!correctFile){
-        printf("File is corrupt, the instance file does not match specification\n");
+    if(!correctSize){
+        printf("File is corrupt, the number of instances generated do not match the number of points specified in the file\n");
         return -2;
     }
 
@@ -431,7 +414,7 @@ int main(int argc, char** argv){
     if(filename != NULL){
         printPlane(plane, options);
     }
-
+    
     // The hack is needed because plane.generation will only be less than plane.total_gen when
     // the user inputs data through the terminal
     while(plane.generation < plane.total_gen){
