@@ -1,3 +1,18 @@
+/* assignment1.c
+*  This program performs two functions. 1. It validates instance files that 
+*  are passed in through the terminal using -i. 2. It generates instance
+*  files based off user input.
+*
+*  Assumptions: That the user is not intentionally malicious and he tries to enter
+*  integers as input. If he tries to enter strings or other weird characters, bad
+*  things could happen.
+*
+* Copyright 2016, Justin Barclay.
+* All rights reserved.
+*
+* Created by:		Justin Barclay (justincbarclay@gmail.com)
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -380,6 +395,7 @@ int main(int argc, char **argv){
         // Check to see if a file was succesffully parsed
         if(lines == NULL){
             printf("File not found\n");
+            printf("Exiting...\n");
             return -1;
         }
         plane.generation = getGeneration(filename);
@@ -390,8 +406,7 @@ int main(int argc, char **argv){
     }
     // Ensure instances is of the correct size;
     if(!correctSize){
-        printf("File is corrupted, the number of instances generated do not match the number of points specified in the file\n");
-        printf("Now exiting...\n");
+        printf("File is corrupt, the number of instances generated do not match the number of points specified in the file\n");
         return -2;
     }
 
@@ -399,6 +414,9 @@ int main(int argc, char **argv){
     if(filename != NULL){
         printPlane(plane, options);
     }
+    
+    // The hack is needed because plane.generation will only be less than plane.total_gen when
+    // the user inputs data through the terminal
     while(plane.generation < plane.total_gen){
         plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y);
         printPlane(plane, options);
