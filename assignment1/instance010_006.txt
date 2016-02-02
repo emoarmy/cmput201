@@ -3,14 +3,14 @@
 #number of points NUM_PT
 10
 #coordinates
-7	7
-9	7
-6	8
-10	2
-9	6
-8	8
-4	3
-10	4
-2	10
-7	2
+9	8
+6	6
+3	4
+10	0
+8	0
+3	5
+1	7
+7	8
+1	5
+8	4
 #end of instance

@@ -1,16 +1,16 @@
 #area [0, MAX_X] x [0, MAX_Y]
-100	100
+10	10
 #number of points NUM_PT
 10
 #coordinates
-28	80
-51	46
-92	20
-8	26
-84	7
-20	31
-64	33
-68	84
-8	59
-21	85
+10	2
+4	9
+3	4
+3	6
+5	10
+7	0
+2	7
+2	1
+4	6
+6	3
 #end of instance

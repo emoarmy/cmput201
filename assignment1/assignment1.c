@@ -27,6 +27,8 @@ typedef struct
 //
 ////////////////////////////////////////////////
 bool isBetween(int between, int lower, int upper){
+    //return true if the first variable is between the second two variables
+    // this does no error checking for incorrect input
     if (between > lower && upper > between){
         return true;
     }
@@ -43,6 +45,7 @@ bool isComment(char* line){
 }
 
 int* splitNumbers(char* line){
+    //Split numbers in a string based on the \t delimiter"
     int *array = malloc(sizeof(int)*2) ; // Hard coded because each line in the sample file has at most 2 ints.
     char **delim;
     char* argv[10];
@@ -59,6 +62,7 @@ int* splitNumbers(char* line){
 
 
 char* genFilename(int numberOfPoints, int index){
+    //returns a filename as a string based on the number of points and the instance number
     char* string = malloc(sizeof(char)*100);
     asprintf(&string, "instance%.3i_%.3i.txt", numberOfPoints, index);
     return string;
@@ -70,16 +74,18 @@ char* genFilename(int numberOfPoints, int index){
 //
 ////////////////////////////////////////////////
 int* getInput(char* prompt, int num_of_values){
+    // Prompts user for input and pattern matches characters until it finds as many as needed and returns the option int array
     int *option = malloc(sizeof(int)*2);
-    char newLine;
     printf("%s", prompt);
     for(int i = 0; i < num_of_values; i++){
-        scanf("%d%c", &option[i], &newLine);
+        scanf("%d", &option[i]);
     }
    return option;
 }
 
 char* getFilename(char** array, int length){
+    // Parses an array of strings and if a string matching "-i" is found, it returns the next string in the array
+    // if no file name is in the string, return NULL
     char* filename;
     filename = NULL;
 
@@ -93,6 +99,7 @@ char* getFilename(char** array, int length){
 }
 
 char* getOption(char** array, int length){
+    // Like getFilename, this function parses through an array of strings and grabs the element after -o and returns it as an option
     char* option;
     option = NULL;
 
@@ -105,6 +112,7 @@ char* getOption(char** array, int length){
    return option;
 }
 int getGeneration(char* filename){
+    // This parses a string that is passed into it for a number that indicates the generation number of the instance
     char* genChar;
     char* ptr;
     int index;
@@ -119,8 +127,8 @@ int getGeneration(char* filename){
     return gen;
 }
 Plane getParams(void){
-    // Prompts user for the input to construct the circuitry info
-    // and returns an array of characters
+    // Prompts user for the input to construct planes
+    // and returns an array of ints
     Plane plane;
     plane.MAX_X[0] = 0;
     plane.MAX_Y[0] = 0;
@@ -135,12 +143,20 @@ Plane getParams(void){
     num_pt = getInput("Enter the number of points NUM_PT: ", 1);
     num_inst = getInput("Enter the number of random instances to be generated: ", 1);
     plane.instance_size=0;
+    
+    //Error checking to ensure, that we can generate as many unique points as the user requires
+    while(num_pt[0] > max_x_y[0]+1 * max_x_y[1]+1){
+        printf("Please enter a number of points to enter that is less than Max X+1 * Max Y+1");
+        num_pt = getInput("Enter the number of points NUM_PT: ", 1);
+    }
 
+    // assign inputs from user to plane
     plane.MAX_X[1] = max_x_y[0];
     plane.MAX_Y[1] = max_x_y[1];
     plane.NUM_PT = num_pt[0];
     plane.total_gen = num_inst[0];
 
+    // free all malloc variables in the program
     free(max_x_y);
     free(num_pt);
     free(num_inst);
@@ -154,13 +170,16 @@ Plane getParams(void){
 //
 ////////////////////////////////////////////////
 char** readFile(char* filename){
+    // Takes a file name, and searches for that file in the same direcotry as the program is being executed
+    // If it fails, to find a file it returns NULL otherwise it returns an array of \n terminated strings
+
     size_t nBytes = 255;
-    char **lines = malloc(1000*sizeof(char*));
+    char** lines = malloc(1000*sizeof(char*));
     lines[0] = NULL;
 
     fp = fopen(filename, "rt");
     if (fp == NULL){
-           exit(EXIT_FAILURE);
+        return NULL;
     }
     int index =0;
     while(feof(fp) == 0){
@@ -176,25 +195,35 @@ Plane getFileParameters(char* line[]){
     // Check line by line for the presence of a commented line. If the line is commented
     // ignore the line, else add the parameters to the parameters array.
     Plane plane;
+    
+    // I need to learn how realloc works. This could cause bugs if I am reading in a file that has more than 100 instances
     int** instance = malloc(sizeof(int[2])*100);
+    
+    //Initialize variable
     plane.MAX_X[0] = 0;
     plane.MAX_Y[0] = 0;
     plane.instance_size = 0;
     plane.total_gen = 0;
     int index=0;
+    int* temp;
+    
+    // Read the the line array until it reaches null
     for(int i=0; line[i] != NULL; i++){
         if(!isComment(line[i])){
+            //First instance of text from the array that is not a comment should be max_x and max_y
             if(index == 0){
-                int* temp = splitNumbers(line[i]);
+                temp = splitNumbers(line[i]);
                 plane.MAX_X[1] = temp[0];
                 plane.MAX_Y[1] = temp[1];
             }
+            //second instance of text should be total number of points
             if(index == 1){
-                int* temp = splitNumbers(line[i]);
+                temp = splitNumbers(line[i]);
                 plane.NUM_PT = temp[0];
             }
+            //Anyone after that until the end of the array hould be instances
             if(index >= 2 && strcmp(line[i], "\0") !=0){
-                int* temp = splitNumbers(line[i]);
+                temp = splitNumbers(line[i]);
                 plane.instance_size++;
                 instance[index-2] = temp;
             }
@@ -202,6 +231,7 @@ Plane getFileParameters(char* line[]){
         }
     }
     plane.instance = instance;
+    free(temp);
     return plane;
 }
 
@@ -213,7 +243,6 @@ Plane getFileParameters(char* line[]){
 
 bool planeToFile(char* filename, Plane plane){
     FILE *newFile;
-    printf("File name = %s\n", filename);
     //the variable we're going to use to print everything
     newFile = fopen(filename, "w+");
     //print MAX_X and MAX_Y
@@ -251,6 +280,7 @@ void planeToTerminal(Plane plane){
 }
 
 void printPlane(Plane plane, char* options){
+    // Determine, based on the options being passed in, how to print the given Plane
     if(options != NULL && strcmp(options, "output") == 0 ){
         char* filename = genFilename(plane.NUM_PT, plane.generation);
         planeToFile(filename, plane);
@@ -266,10 +296,14 @@ void printPlane(Plane plane, char* options){
 //
 ////////////////////////////////////////////////
 int genCoordinate(int min, int max){
+    // this has some issues with uniform number distributions but for this class it should work
     return (rand() % (max-min+1) + min);
 }
 
 int* genCoordinates(int* x_array, int* y_array ){
+    // This code is malloc and needs to call free
+    
+    //Uses the implicit min of the array and the max as supplied by the user to gen a new x and y coordinate
     int* coordinates = malloc(sizeof(int)*2);
     coordinates[0] = genCoordinate(x_array[0], x_array[1]);
     coordinates[1] = genCoordinate(y_array[0], y_array[1]);
@@ -278,9 +312,12 @@ int* genCoordinates(int* x_array, int* y_array ){
 }
 
 bool checkUnique(int* coordinate, int** instance,  int size){
+
+    // A quick and dirty way to check if a given coordinate is unique.
+    // It iterates through the passed in instance and returns false if both
+    // x and y coordinates match one in the instance
     for(int i=0; i<size; i++){
         if(coordinate[0] == instance[i][0] && coordinate[1] == instance[i][1]){
-            printf("Not Unique");
             return false;
         }
     }
@@ -288,6 +325,8 @@ bool checkUnique(int* coordinate, int** instance,  int size){
 }
 
 int** genInstance(int numberOfPoints, int* x_array, int* y_array){
+    // Takes in 3 parametes, number of points to generate, an array with min and max x coordinates
+    // and an array with min and man y coordinates;
     int** instance = malloc(sizeof(int)*2*numberOfPoints);
     int* coordinates;
     for(int i=0; i<numberOfPoints; i++){
@@ -296,10 +335,14 @@ int** genInstance(int numberOfPoints, int* x_array, int* y_array){
             coordinates = genCoordinates(x_array, y_array);
         }
         instance[i] = coordinates;
+        
     }
+    // Needs to free the malloc
+    free(coordinates);
     return instance;
 }
 bool checkPlaneInstance(Plane plane){
+    // A quick function that checks if the instance is of required size
     return (plane.NUM_PT == plane.instance_size);
 }
 /////////////////////////////////////////////////
@@ -333,30 +376,38 @@ int main(int argc, char **argv){
         plane.instance_size = plane.NUM_PT;
     } else {
         lines = readFile(filename);
-        if(lines[0] == NULL){
-            printf("File not found");
+        
+        // Check to see if a file was succesffully parsed
+        if(lines == NULL){
+            printf("File not found\n");
             return -1;
         }
         plane.generation = getGeneration(filename);
-        free(lines);
+        
         plane = getFileParameters(lines);
         correctSize = checkPlaneInstance(plane);
-        printf("Plane is of correct size: %i\n", correctSize);
+        free(lines);
     }
-    
-     if(!correctSize){
-            printf("File is corrupted, number of instances do not match number of points needed to be generated");
+    // Ensure instances is of the correct size;
+    if(!correctSize){
+         printf("File is corrupted, number of instances do not match number of instances specified as generated\n");
+         printf("Now exiting...\n");
         return -2;
     }
     
+    if(filename != NULL){
+         printPlane(plane, options);
+    }
     while(plane.generation < plane.total_gen){
         plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y);
         printPlane(plane, options);
         plane.generation++;
     }
-
-    printf("Instance size = %i\n", plane.instance_size);
-    printf("Filename: %s\n", genFilename(plane.NUM_PT, plane.generation));
+ 
+    free(plane.instance);
     return 0;
-
 }
+
+// TODO
+// Comment code more
+// Handle printing an open file in the terminal
