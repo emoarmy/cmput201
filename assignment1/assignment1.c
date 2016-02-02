@@ -390,13 +390,14 @@ int main(int argc, char **argv){
     }
     // Ensure instances is of the correct size;
     if(!correctSize){
-         printf("File is corrupted, number of instances do not match number of instances specified as generated\n");
-         printf("Now exiting...\n");
+        printf("File is corrupted, the number of instances generated do not match the number of points specified in the file\n");
+        printf("Now exiting...\n");
         return -2;
     }
     
+    // A hack to test if we opened a file
     if(filename != NULL){
-         printPlane(plane, options);
+        printPlane(plane, options);
     }
     while(plane.generation < plane.total_gen){
         plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y);
@@ -407,7 +408,3 @@ int main(int argc, char **argv){
     free(plane.instance);
     return 0;
 }
-
-// TODO
-// Comment code more
-// Handle printing an open file in the terminal
