@@ -43,13 +43,21 @@ int* splitNumbers(char* line){
    return array;
 }
 
+
+/////////////////////////////////////////////////
+//
+// Validation
+//
+////////////////////////////////////////////////
 bool checkRows(int** square){
     for(int i=0; i<9; i++){
-        int checkedArray[9] = {0};
+        int checkedArray[10] = {0};
         for(int j=0; j<9; j++){
             //column
             if(square[i][j] != 0 && checkedArray[square[i][j]] > 0){
                 return false;
+            } else {
+                checkedArray[square[i][j]]++;
             }
         }
     }
@@ -58,36 +66,57 @@ bool checkRows(int** square){
 
 bool checkColumns(int** square){
      for(int i=0; i<9; i++){
-        int checkedArray[9] = {0};
+        int checkedArray[10] = {0};
         for(int j=0; j<9; j++){
             //column
-            if(square[j][i] != 0 && checkedArray[square[i][j]] > 0){
+            if((square[j][i] > 0) && checkedArray[square[j][i]] > 0){
                 return false;
+            } else{
+                checkedArray[square[j][i]]++;
             }
         }
     }
     return true;
 }
 
-int checkGrid(int** square, int row, int column) {
-    row=(row/3)*3;
-    column=(column/3)*3;
+
+bool checkGrid(int** square) {
     int r,c;
-    int checkedArray[9] = {0};
-    for(int i=0; i<3; i++){
-        row=(i)*3;
-        column=(i)*3;
+
+    for(int i=0; i<9; i++){
+        int checkedArray[10] = {0};
+        int row=(i/3)*3;
+        int column=(i/3)*3;
         for(r=0;r<3;r++){
             for(c=0;c<3;c++){
-                if(square[row+r][column+c] != 0 && checkedArray[square[row+r][column+c]] > 0){
+                printf("%i ",square[row+r][column+c]); 
+                if(square[row+r][column+c] > 0 && checkedArray[square[row+r][column+c]] > 0){
                     return false;
+                } else {
+                    checkedArray[square[row+r][column+c]]++;
                 }
             }
+            printf("\n");
         }
+        printf("\n");
     }
     return true;
 }
 
+bool checkPuzzle(int** square){
+    bool rows;
+    bool columns;
+    bool grid;
+
+    rows = checkRows(square);
+    columns = checkColumns(square);
+    grid = checkGrid(square);
+
+    printf("Rows true?: %i\n", rows);
+    printf("Columns true?: %i\n", columns);
+    printf("Grid true?: %i\n", grid);
+    return (rows && columns && grid);
+}
 
 int main(void){
     char filename[100];
@@ -95,8 +124,6 @@ int main(void){
     int index;
     int** sudoku = malloc(sizeof(int*)*9);
     int size;
-    bool rows;
-    bool columns;
     printf("What file would you like to open?\n");
     scanf("%s", filename);
     
@@ -109,13 +136,7 @@ int main(void){
         sudoku[index] = splitNumbers(lines[index]);
         
     }
-    
-    rows = checkRows(sudoku);
-    columns = checkColumns(sudoku);
-    
-    printf("Rows true?: %i\n", rows);
-    printf("Columns true?: %i\n", columns);
-    printf("Columns true?: %i\n", grid);
+    checkPuzzle(sudoku);
     free(sudoku);
     free(lines);
     return 0;

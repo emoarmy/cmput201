@@ -1,4 +1,4 @@
-/* assignment1.c
+/* assignment2.c
 *  This program performs two functions. 1. It validates instance files that
 *  are passed in through the terminal using -i. 2. It generates instance
 *  files based off user input.
@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
+#include <math.h>
 
 FILE *fp;
 /////////////////////////////////////////////////
@@ -360,7 +361,8 @@ void printPlane(Plane plane, char* options){
     if(options != NULL && strcmp(options, "output") == 0 ){
         char* filename = genFilename(plane.NUM_PT, plane.generation);
         planeToFile(filename, plane);
-        printf("%s created.\n", filename);
+        
+        printf("%s created\n", filename);
         free(filename);
     } else {
         planeToTerminal(plane);
@@ -404,6 +406,25 @@ int** genInstance(int numberOfPoints, int* x_array, int* y_array){
     return instance;
 }
 
+
+/////////////////////////////////////////////////
+//
+// BST
+//
+////////////////////////////////////////////////
+
+int rectDistance(int* coordA, int* coordB){
+    return (abs(coordA[0] - coordB[0]) + abs(coordA[1] - coordB[1]));
+}
+
+void appendWeight(int** instance, char* filename){
+    FILE *appendFile;
+    int edge[3]={0};
+    //the variable we're going to use to print everything
+    appendFile = fopen(filename, "a");
+    fprintf(appendFile, "# edges of the MST by Prim’s algorithm:");
+    fprintf(appendFile, "%i %i %i", edge[0], edge[1], edge[2]);
+}
 /////////////////////////////////////////////////
 //
 // MAIN
@@ -467,7 +488,7 @@ int main(int argc, char** argv){
         printPlane(plane, options);
         plane.generation++;
     }
-
+    
     free(plane.instance);
     return 0;
 }
