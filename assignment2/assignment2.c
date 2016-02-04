@@ -43,6 +43,165 @@ typedef struct
 // HELPERS
 //
 ////////////////////////////////////////////////
+int* splitNumbers(char* line);
+
+char* genFilename(int numberOfPoints, int index);
+
+/////////////////////////////////////////////////
+//
+// VALIDATE
+//
+////////////////////////////////////////////////
+bool isBetween(int between, int lower, int upper);
+
+bool isComment(char* line);
+
+bool checkMax(int max);
+
+bool checkUnique(int* coordinate, int** instance,  int size);
+
+bool checkPlaneInstance(Plane plane);
+
+bool checkAllUnique(Plane plane);
+
+bool checkBounds(Plane plane);
+
+bool checkFile(Plane plane);
+
+/////////////////////////////////////////////////
+//
+// GETTERS
+//
+////////////////////////////////////////////////
+int* getInput(char* prompt, int num_of_values);
+
+char* getFilename(char** array, int length);
+
+char* getOption(char** array, int length);
+
+int getGeneration(char* filename);
+
+Plane getParameters(void);
+
+char** readFile(char* filename);
+
+Plane getFileParameters(char* line[]);
+
+/////////////////////////////////////////////////
+//
+// Print Data
+//
+////////////////////////////////////////////////
+
+bool planeToFile(char* filename, Plane plane);
+
+void planeToTerminal(Plane plane);
+
+void printPlane(Plane plane, char* options);
+
+/////////////////////////////////////////////////
+//
+// GEN DATA
+//
+////////////////////////////////////////////////
+int genCoordinate(int min, int max);
+
+int* genCoordinates(int* x_array, int* y_array );
+
+int** genInstance(int numberOfPoints, int* x_array, int* y_array);
+
+/////////////////////////////////////////////////
+//
+// BST
+//
+////////////////////////////////////////////////
+
+int rectDistance(int* coordA, int* coordB);
+
+void appendWeight(int* instance, char* filename);
+
+void prim(Plane plane);
+
+void addPoint(int* point, int** instance, int size);
+
+int** removePoint(int* point, int** instance, int size);
+
+int* minWeight(int** inside, int** outside);
+
+/////////////////////////////////////////////////
+//
+// MAIN
+//
+////////////////////////////////////////////////
+
+// Must check for errors in instance, if so output error to console.
+// If option output is given, output file to a text
+// If option output is not given output to screen
+int main(int argc, char** argv){
+    char* filename = NULL;
+    char** lines;
+    Plane plane;
+    char* options = NULL;
+    bool correctFile = true;
+    //initiallize rand() with current time
+    srand(time(NULL));
+
+    // Cheching for arguments, if they are greater than or equal to two, assume
+    // their are options and a filename being passed in trying to be passed in.
+    if(argc >= 2){
+        filename = getFilename(argv, argc);
+        options = getOption(argv, argc);
+    }
+
+    // Grab Data
+    if (filename == NULL){
+        plane = getParameters();
+        plane.instance_size = plane.NUM_PT;
+    } else {
+        lines = readFile(filename);
+
+        // Check to see if a file was succesffully parsed
+        if(lines == NULL){
+            printf("File not found\n");
+            printf("Exiting...\n");
+            return -1;
+        }
+        plane.generation = getGeneration(filename);
+
+        plane = getFileParameters(lines);
+        correctFile = checkFile(plane);
+        free(lines);
+    }
+    
+    // Ensure instances is of the correct size;
+    if(!correctFile){
+        printf("File is corrupt, the instance file does not match specification\n");
+        return -2;
+    }
+
+    // A hack to test if we opened a file
+    if(filename != NULL){
+        printPlane(plane, options);
+    }
+
+    // The hack is needed because plane.generation will only be less than plane.total_gen when
+    // the user inputs data through the terminal
+    while(plane.generation < plane.total_gen){
+        plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y);
+        printPlane(plane, options);
+        plane.generation++;
+    }
+    prim(plane);
+    free(plane.instance);
+    return 0;
+}
+
+
+/////////////////////////////////////////////////
+//
+// HELPERS
+//
+////////////////////////////////////////////////
 int* splitNumbers(char* line){
     //Split numbers in a string based on the \t delimiter"
     int *array = malloc(sizeof(int)*2) ; // Hard coded because each line in the sample file has at most 2 ints.
@@ -417,78 +576,61 @@ int rectDistance(int* coordA, int* coordB){
     return (abs(coordA[0] - coordB[0]) + abs(coordA[1] - coordB[1]));
 }
 
-void appendWeight(int** instance, char* filename){
+int** removePoint(int* point, int** instance, int size){
+    int** newInstance = malloc(sizeof(int)*2*(size-1));
+    int index = 0;
+    for(int i=0; i < size; i++){
+        if(instance[i][0] != point[0] && instance[i][1] != point[1]){
+            newInstance[index] = instance[i];
+            index++;
+        }
+    }
+    free(instance);
+    return newInstance;
+}
+
+void addPoint(int* point, int** instance, int size){
+    instance = realloc(instance, sizeof(instance) + sizeof(point));
+    instance[size] = point;
+}
+
+int** copyInstance(int** instance, int len){
+    int** newInstance = malloc(sizeof(int)*2*len);
+    memcpy(newInstance, instance, len);
+    return newInstance;
+                         
+}
+
+
+void prim(Plane plane){
+    int** inside;
+    int** outside;
+    int sizeIn = 0;
+    int sizeOut = plane.NUM_PT;
+    inside = malloc(0);
+    outside = copyInstance(plane.instance, plane.NUM_PT);
+    
+    // Set an arbitrary starting point
+    addPoint(plane.instance[0], inside, sizeIn);
+    sizeIn++;
+    
+    outside = removePoint(plane.instance[0], outside, sizeOut);
+    sizeOut--;
+
+    
+    for(int i=0; i < sizeIn; i++){
+        
+    }
+   
+
+    
+    
+}
+
+void appendWeight(int* instance, char* filename){
     FILE *appendFile;
-    int edge[3]={0};
     //the variable we're going to use to print everything
     appendFile = fopen(filename, "a");
     fprintf(appendFile, "# edges of the MST by Prim’s algorithm:");
-    fprintf(appendFile, "%i %i %i", edge[0], edge[1], edge[2]);
-}
-/////////////////////////////////////////////////
-//
-// MAIN
-//
-////////////////////////////////////////////////
-
-// Must check for errors in instance, if so output error to console.
-// If option output is given, output file to a text
-// If option output is not given output to screen
-int main(int argc, char** argv){
-    char* filename = NULL;
-    char** lines;
-    Plane plane;
-    char* options = NULL;
-    bool correctFile = true;
-    //initiallize rand() with current time
-    srand(time(NULL));
-
-    // Cheching for arguments, if they are greater than or equal to two, assume
-    // their are options and a filename being passed in trying to be passed in.
-    if(argc >= 2){
-        filename = getFilename(argv, argc);
-        options = getOption(argv, argc);
-    }
-
-    // Grab Data
-    if (filename == NULL){
-        plane = getParameters();
-        plane.instance_size = plane.NUM_PT;
-    } else {
-        lines = readFile(filename);
-
-        // Check to see if a file was succesffully parsed
-        if(lines == NULL){
-            printf("File not found\n");
-            printf("Exiting...\n");
-            return -1;
-        }
-        plane.generation = getGeneration(filename);
-
-        plane = getFileParameters(lines);
-        correctFile = checkFile(plane);
-        free(lines);
-    }
-    
-    // Ensure instances is of the correct size;
-    if(!correctFile){
-        printf("File is corrupt, the instance file does not match specification\n");
-        return -2;
-    }
-
-    // A hack to test if we opened a file
-    if(filename != NULL){
-        printPlane(plane, options);
-    }
-
-    // The hack is needed because plane.generation will only be less than plane.total_gen when
-    // the user inputs data through the terminal
-    while(plane.generation < plane.total_gen){
-        plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y);
-        printPlane(plane, options);
-        plane.generation++;
-    }
-    
-    free(plane.instance);
-    return 0;
+    fprintf(appendFile, "%i %i %i", instance[0], instance[1], instance[2]);
 }
