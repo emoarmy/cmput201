@@ -1,0 +1,40 @@
+Marking Sheet for Assignment 1
+
+Total Mark:(1.5/10)
+
+
+Test cases:
+Test case No.1:-i(2/10) WRONG!
+Can read sample input file.
+
+Test cases 2-7:(3/10) WRONG!
+Test case No.2:-i
+Can detect and report error: lost MAX_Y.
+
+Test case No.3:-i  
+Can detect and report error:lost one pair of coordinates(indicated 10 points, only 9 pairs of coordinates) .
+
+Test case No.4:-i 
+Can detect and report error:lost Y coordinate for the 10th point
+
+Test case No.5:-i 
+Only has some comments.
+
+Test case No.6:-i 
+has 3 numbers for MAX_X and MAX_Y
+
+Test case No.7:-i 
+lost number of points.
+
+Test case No.8:(2/10) input:6 6 10 3 WRONG! (-0.5 not writing on files)
+Generating random points and files.
+
+Test case No.9:-i -o(2/10) WRONG!
+Read the sample input file and write an output file.
+
+Test case No.10:-o -i(1/10) WRONG!
+Change the order of flags.
+
+
+
+

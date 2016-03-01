@@ -1,4 +1,5 @@
 /* assignment2.c
+*  This program is a naive attempt to write side effect free code.
 *  This program performs two functions. 1. It validates instance files that
 *  are passed in through the terminal using -i. 2. It generates instance
 *  files based off user input.
@@ -126,7 +127,12 @@ void addPoint(int* point, int** instance, int size);
 
 int** removePoint(int* point, int** instance, int size);
 
-int* minWeight(int** inside, int** outside);
+int* breakTie(int* compPoint, int* pointA, int* pointB);
+
+int* maxX(int* a, int* b);
+
+int findMin(int** inside, int sizeIn, int** outside, int sizeOut);
+
 
 /////////////////////////////////////////////////
 //
@@ -467,7 +473,6 @@ Plane getFileParameters(char* line[]){
         }
     }
     plane.instance = instance;
-    free(temp);
     return plane;
 }
 
@@ -590,6 +595,7 @@ int** removePoint(int* point, int** instance, int size){
 }
 
 void addPoint(int* point, int** instance, int size){
+    // This is a side effect!
     instance = realloc(instance, sizeof(instance) + sizeof(point));
     instance[size] = point;
 }
@@ -597,16 +603,16 @@ void addPoint(int* point, int** instance, int size){
 int** copyInstance(int** instance, int len){
     int** newInstance = malloc(sizeof(int)*2*len);
     memcpy(newInstance, instance, len);
-    return newInstance;
-                         
+    return newInstance;                     
 }
 
-
-void prim(Plane plane){
+int** prim(Plane plane){
+    // Returns a MST of format indices1, indice2, weight;
     int** inside;
     int** outside;
     int sizeIn = 0;
     int sizeOut = plane.NUM_PT;
+    int outPos;
     inside = malloc(0);
     outside = copyInstance(plane.instance, plane.NUM_PT);
     
@@ -614,17 +620,61 @@ void prim(Plane plane){
     addPoint(plane.instance[0], inside, sizeIn);
     sizeIn++;
     
-    outside = removePoint(plane.instance[0], outside, sizeOut);
-    sizeOut--;
-
-    
-    for(int i=0; i < sizeIn; i++){
-        
+    while(sizeOut >0){
+       outPos = findMin(inside, sizeIn, outside, sizeOut);
+       addPoint(outside[outPos], inside, sizeIn++);
+       outside = removePoint(plane.instance[0], outside, sizeOut);
+       sizeOut--;
     }
    
 
-    
-    
+}
+
+int findMin(int** inside, int sizeIn, int** outside, int sizeOut){
+    int minNodePos = 0;
+    int currentDistance;
+    int minDistance;
+    int* coord;
+
+    // Algorithm for finding the minimum distance between two arrays of coordinates
+    for(int i=0; i < sizeIn; i++){
+        for(int j=0; i < sizeOut; j++){
+            currentDistance = rectDistance(inside[i], outside[j]);
+            if(i==0 && j==0){
+
+                minDistance = currentDistance;
+                minNodePos = j;
+            } else if(currentDistance < minDistance){
+
+                minNodePos = j;
+            } else if(currentDistance == minDistance){
+
+                //If there is a tie, reassign minNodePos only if coord[j] wins the tie
+                coord =  breakTie(inside[i], outside[j], outside[minNodePos]);
+                if (outside[j][0] == coord[0] && outside[j][1] == coord[1]){
+                   minNodePos = j;
+               }
+            }
+        }
+    }
+    return minNodePos;
+}
+
+int* breakTie(int* compPoint, int* pointA, int* pointB){
+    // Breaks the tie by returning the point with the larger Y value
+    // this needs to be fixed
+    if(abs(pointA[1] - compPoint[1]) > abs(pointB[1] - compPoint[1])){
+        return pointA;
+    } else if(abs(pointB[1] - compPoint[1]) > abs(pointA[1] - compPoint[1])){
+        return pointB;
+    } else{
+        return maxX(pointA, pointB);
+    }     
+}
+
+int* maxX(int* pointA, int* pointB){
+    //return the max of two ints, in the event of a tie the first int is chosen.
+    return pointB[0] > pointA[0]? pointB: pointA;
 }
 
 void appendWeight(int* instance, char* filename){
