@@ -48,6 +48,8 @@ int* splitNumbers(char* line);
 
 char* genFilename(int numberOfPoints, int index);
 
+int findPos(int* arr, int arrSize, int num);
+
 /////////////////////////////////////////////////
 //
 // VALIDATE
@@ -121,17 +123,19 @@ int rectDistance(int* coordA, int* coordB);
 
 void appendWeight(int* instance, char* filename);
 
-void prim(Plane plane);
+int* addVisited(int* visited, int len, int newPoint);
 
-void addPoint(int* point, int** instance, int size);
+int** prim(Plane plane);
+
+void addEdge(int* point, int** instance, int size);
 
 int** removePoint(int* point, int** instance, int size);
 
-int* breakTie(int* compPoint, int* pointA, int* pointB);
+int breakTie(int** coords, int visited, int unvisited, int minNodeUnvis);
 
-int* maxX(int* a, int* b);
+int maxX(int** coords, int minNodeUnvis, int unvisited);
 
-int findMin(int** inside, int sizeIn, int** outside, int sizeOut);
+int* findMin(int** coords, int* visited, int* unvisited);
 
 
 /////////////////////////////////////////////////
@@ -197,8 +201,12 @@ int main(int argc, char** argv){
         printPlane(plane, options);
         plane.generation++;
     }
-    prim(plane);
+    int** MST;
+    MST = prim(plane);
+    
+
     free(plane.instance);
+    
     return 0;
 }
 
@@ -231,6 +239,17 @@ char* genFilename(int numberOfPoints, int index){
     char* string = malloc(sizeof(char)*100);
     asprintf(&string, "instance%.3i_%.3i.txt", numberOfPoints, index);
     return string;
+}
+
+int findPos(int* arr, int arrSize, int num){
+    if (num < arrSize){
+        for(int i=0; i < arrSize; i++){
+            if(arr[i] == num){
+                return i;
+            }
+        }
+    }
+    return -1;
 }
 
 /////////////////////////////////////////////////
@@ -593,88 +612,111 @@ int** removePoint(int* point, int** instance, int size){
     free(instance);
     return newInstance;
 }
-
-void addPoint(int* point, int** instance, int size){
-    // This is a side effect!
-    instance = realloc(instance, sizeof(instance) + sizeof(point));
-    instance[size] = point;
-}
-
-int** copyInstance(int** instance, int len){
-    int** newInstance = malloc(sizeof(int)*2*len);
+int* copyInstance(int* instance, int len){
+    //this is WTF code, need to think about this some more
+    int* newInstance = malloc(sizeof(int)*len+1);
     memcpy(newInstance, instance, len);
     return newInstance;                     
 }
 
+int* addVisited(int* visited, int len,  int newPoint){
+    int* newVisited;
+    newVisited = copyInstance(visited, len);
+    free(visited);
+    newVisited[len] = newPoint;
+    return newVisited;
+}
+
+int* removeVisited(int* unvisited, int len, int pos){
+    int* newUnvisited = malloc(sizeof(int)*(len-1));
+    int index = 0;
+    for(int i=0; i<len; i++){
+        if(unvisited[i] != pos){
+            newUnvisited[index] = unvisited[i];
+            index++;
+        }
+    }
+    return newUnvisited;
+}
+
+
+void addEdge(int* edge, int** instance, int size){
+    // This is a side effect, but it's fun to 
+    instance = realloc(instance, sizeof(instance) + sizeof(edge));
+    instance[size] = edge;
+}
+
 int** prim(Plane plane){
     // Returns a MST of format indices1, indice2, weight;
-    int** inside;
-    int** outside;
-    int sizeIn = 0;
-    int sizeOut = plane.NUM_PT;
-    int outPos;
-    inside = malloc(0);
-    outside = copyInstance(plane.instance, plane.NUM_PT);
-    
+    int* visited = malloc(0);
+    int* unvisited = malloc(sizeof(int)*plane.instance_size);
+    int* newEdge;
+    int sizeUnvisited = plane.instance_size;
+    int sizeVisited = 0;
+    int** MST =  malloc(0);
+     
     // Set an arbitrary starting point
-    addPoint(plane.instance[0], inside, sizeIn);
-    sizeIn++;
     
-    while(sizeOut >0){
-       outPos = findMin(inside, sizeIn, outside, sizeOut);
-       addPoint(outside[outPos], inside, sizeIn++);
-       outside = removePoint(plane.instance[0], outside, sizeOut);
-       sizeOut--;
+    while(sizeUnvisited >0){
+       newEdge = findMin(plane.instance, visited, unvisited);
+       addEdge(newEdge, MST, sizeVisited);
+       visited = addVisited(visited, sizeVisited, newEdge[1]);
+       sizeVisited++;
+       unvisited = removeVisited(unvisited, sizeUnvisited, newEdge[1]);
+       sizeUnvisited--;
     }
-   
+   return MST;
 
 }
 
-int findMin(int** inside, int sizeIn, int** outside, int sizeOut){
-    int minNodePos = 0;
+int* findMin(int** coords, int* visited, int* unvisited){
+    int minNodeUnvis;
+    int minNodeVis;
     int currentDistance;
     int minDistance;
-    int* coord;
-
+    int* edge = malloc(sizeof(int)*3);
+    
     // Algorithm for finding the minimum distance between two arrays of coordinates
-    for(int i=0; i < sizeIn; i++){
-        for(int j=0; i < sizeOut; j++){
-            currentDistance = rectDistance(inside[i], outside[j]);
+    for(int i=0; i < (int) (sizeof(visited)/sizeof(int)); i++){
+        for(int j=0; i < (int) (sizeof(visited)/sizeof(int)); j++){
+            currentDistance = rectDistance(coords[visited[i]], coords[unvisited[j]]);
             if(i==0 && j==0){
-
                 minDistance = currentDistance;
-                minNodePos = j;
+                minNodeUnvis = unvisited[j];
+                minNodeVis = visited[i];
             } else if(currentDistance < minDistance){
-
-                minNodePos = j;
+                minDistance = currentDistance;
+                minNodeUnvis = unvisited[j];
+                minNodeVis = visited[i];minDistance = currentDistance;
+                
             } else if(currentDistance == minDistance){
-
-                //If there is a tie, reassign minNodePos only if coord[j] wins the tie
-                coord =  breakTie(inside[i], outside[j], outside[minNodePos]);
-                if (outside[j][0] == coord[0] && outside[j][1] == coord[1]){
-                   minNodePos = j;
-               }
+                //If there is a tie, reassign minNodeUnvis with return value of breakTie
+                minNodeUnvis = breakTie(coords, visited[i], unvisited[j], minNodeUnvis);
+                minNodeVis = visited[i];             
             }
         }
     }
-    return minNodePos;
+    edge[0] = minNodeVis;
+    edge[1] = minNodeUnvis;
+    edge[2] = minDistance;
+    return edge;
 }
 
-int* breakTie(int* compPoint, int* pointA, int* pointB){
+int breakTie(int** coords, int visited, int unvisited, int minNodeUnvis){
     // Breaks the tie by returning the point with the larger Y value
     // this needs to be fixed
-    if(abs(pointA[1] - compPoint[1]) > abs(pointB[1] - compPoint[1])){
-        return pointA;
-    } else if(abs(pointB[1] - compPoint[1]) > abs(pointA[1] - compPoint[1])){
-        return pointB;
+    if(abs(coords[minNodeUnvis][1] - coords[visited][1]) > abs(coords[unvisited][1] - coords[visited][1])){
+        return minNodeUnvis;
+    } else if(abs(coords[unvisited][1] - coords[visited][1]) > abs(coords[minNodeUnvis][1] - coords[visited][1])){
+        return unvisited;
     } else{
-        return maxX(pointA, pointB);
+        return maxX(coords, minNodeUnvis, unvisited);
     }     
 }
 
-int* maxX(int* pointA, int* pointB){
+int maxX(int** coords, int minNodeUnvis, int unvisited){
     //return the max of two ints, in the event of a tie the first int is chosen.
-    return pointB[0] > pointA[0]? pointB: pointA;
+    return coords[unvisited][0] > coords[minNodeUnvis][0]? unvisited: minNodeUnvis;
 }
 
 void appendWeight(int* instance, char* filename){
