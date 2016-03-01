@@ -153,6 +153,7 @@ int main(int argc, char** argv){
     Plane plane;
     char* options = NULL;
     bool correctFile = true;
+    int** MST;
     //initiallize rand() with current time
     srand(time(NULL));
 
@@ -201,9 +202,15 @@ int main(int argc, char** argv){
         printPlane(plane, options);
         plane.generation++;
     }
-    int** MST;
+    printf("blah\n");
+    printf("here\n");
+ 
     MST = prim(plane);
-    
+    //printf("\n%i",(int) (sizeof(MST)/(sizeof(int)*3)));
+    /*for(int i=0; i < (int) (sizeof(MST)/(sizeof(int)*3)); i++){
+        printf( "# edges of the MST by Prim’s algorithm:");
+        printf("%i %i %i", MST[i][0], MST[i][1], MST[i][2]);
+    }*/
 
     free(plane.instance);
     
@@ -664,6 +671,7 @@ int** prim(Plane plane){
        sizeVisited++;
        unvisited = removeVisited(unvisited, sizeUnvisited, newEdge[1]);
        sizeUnvisited--;
+       
     }
    return MST;
 
