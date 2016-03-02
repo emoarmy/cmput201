@@ -121,13 +121,11 @@ int** genInstance(int numberOfPoints, int* x_array, int* y_array);
 
 int rectDistance(int* coordA, int* coordB);
 
-void appendWeight(int* instance, char* filename);
+void appendWeight(int* instance, FILE* filename);
 
 int* addVisited(int* visited, int len, int newPoint);
 
 int** prim(Plane plane);
-
-void addEdge(int* point, int** instance, int size);
 
 int breakTie(int** coords, int visited, int unvisited, int minNodeUnvis);
 
@@ -200,13 +198,20 @@ int main(int argc, char** argv){
         printPlane(plane, options);
         plane.generation++;
     }
-    printf("blah\n");
-    printf("here\n");
+
 
     MST = prim(plane);
     for(int i=0; i < plane.instance_size-1; i++){
         printf( "# edges of the MST by Prim’s algorithm:\t");
         printf("%i %i %i\n", MST[i][0], MST[i][1], MST[i][2]);
+    }
+    if(filename != NULL){
+        fp = fopen(filename, "a");
+        fprintf(fp, "# edges of the MST by Prim’s algorithm:\n");
+        for(int i=0; i < plane.instance_size-1; i++){
+          fprintf(fp, "%i %i %i\n", MST[i][0], MST[i][1], MST[i][2]);
+        }
+        fclose(fp);
     }
 
     free(plane.instance);
@@ -629,11 +634,6 @@ void removeVisited(int* unvisited, int len, int pos){
 }
 
 
-void addEdge(int* edge, int** instance, int size){
-    // This is a side effect, but it's fun to
-    instance[size] = edge;
-}
-
 int** prim(Plane plane){
     // Returns a MST of format indices1, indice2, weight;
     int visited[plane.instance_size];
@@ -651,7 +651,7 @@ int** prim(Plane plane){
     visited[0] = 0;
     while(sizeUnvisited >0){
        newEdge = findMin(plane.instance, visited, sizeVisited,  unvisited, sizeUnvisited);
-       addEdge(newEdge, MST, sizeVisited);
+       MST[sizeVisited] = newEdge;
        sizeVisited++;
        visited[sizeVisited] = newEdge[1];
        removeVisited(unvisited, sizeUnvisited, newEdge[1]);
@@ -668,8 +668,9 @@ int* findMin(int** coords, int* visited, int visitedSize, int* unvisited, int un
     int minDistance;
     int* edge = malloc(sizeof(int)*3);
     // Algorithm for finding the minimum distance between two arrays of coordinates
-    for(int i=0; i== 0 || i < visitedSize; i++){
+    for(int i=0; i== 0 || i < visitedSize+1; i++){
         for(int j=0; j < unvisitedSize; j++){
+            //debug
 
             currentDistance = rectDistance(coords[visited[i]], coords[unvisited[j]]);
             if(i==0 && j==0){
@@ -691,7 +692,6 @@ int* findMin(int** coords, int* visited, int visitedSize, int* unvisited, int un
     edge[0] = minNodeVis;
     edge[1] = minNodeUnvis;
     edge[2] = minDistance;
-    printf("edge %i, %i, %i\n", edge[0], edge[1], edge[2]);
     return edge;
 }
 
@@ -712,10 +712,7 @@ int maxX(int** coords, int minNodeUnvis, int unvisited){
     return coords[unvisited][0] > coords[minNodeUnvis][0]? unvisited: minNodeUnvis;
 }
 
-void appendWeight(int* instance, char* filename){
-    FILE *appendFile;
-    //the variable we're going to use to print everything
-    appendFile = fopen(filename, "a");
-    fprintf(appendFile, "# edges of the MST by Prim’s algorithm:\t");
-    fprintf(appendFile, "%i %i %i", instance[0], instance[1], instance[2]);
+void appendWeight(int* instance, FILE* filename){
+    fprintf(filename, "# edges of the MST by Prim’s algorithm:\t");
+    fprintf(filename, "%i %i %i", instance[0], instance[1], instance[2]);
 }

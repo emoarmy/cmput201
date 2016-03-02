@@ -1,0 +1,16 @@
+#area [0, MAX_X] x [0, MAX_Y]
+100	100
+#number of points NUM_PT
+5
+#coordinates
+0	0
+45	0
+30	30
+30	70
+0	90
+50	50
+70	30
+70	90
+70	100
+100	55
+#end of instance
