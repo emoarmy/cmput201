@@ -133,6 +133,7 @@ int maxX(int** coords, int minNodeUnvis, int unvisited);
 
 int* findMin(int** coords, int* visited, int sizeVisited, int* unvisited, int sizeUnvisited);
 
+int totalWeight(int** MST, int length);
 
 /////////////////////////////////////////////////
 //
@@ -214,6 +215,7 @@ int main(int argc, char** argv){
         fclose(fp);
     }
 
+    printf("Total weight: %i", totalWeight(MST, plane.instance_size-1));
     free(plane.instance);
 
     return 0;
@@ -715,4 +717,12 @@ int maxX(int** coords, int minNodeUnvis, int unvisited){
 void appendWeight(int* instance, FILE* filename){
     fprintf(filename, "# edges of the MST by Prim’s algorithm:\t");
     fprintf(filename, "%i %i %i", instance[0], instance[1], instance[2]);
+}
+
+int totalWeight(int** MST, int length){
+    int total = 0;
+    for(int i=0; i<length; i++){
+        total += MST[i][2];
+    }
+    return total;
 }
