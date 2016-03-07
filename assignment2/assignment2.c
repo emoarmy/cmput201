@@ -229,7 +229,8 @@ int main(int argc, char** argv){
 //
 ////////////////////////////////////////////////
 int* splitNumbers(char* line, int number){
-    //Split numbers in a string based on the \t delimiter"
+    //Split numbers in a string based on white space
+    //This function does a little too much work as it, checks for errors and prints to screen as well
     int *array = malloc(sizeof(int)*2) ; // Hard coded because each line in the sample file has at most 2 ints.
     int number2;
     int count = 0;
@@ -238,14 +239,10 @@ int* splitNumbers(char* line, int number){
 
     // check for a blank line
     if(strcmp(&line[0], " ") != 0){
-        //for(int i=0; (*strings = strsep(&line, " \t")) != NULL; i++){
         for(int i=0; (sscanf(line + total_offset, "%d%n", &number2, &offset))==1; i++){
-            printf("Number = %i\n", number2);
             total_offset += offset;
             array[i] = number2;
-            printf("Count %i, number: %i\n", count, array[i]);
             count++;
-
         }
     } else {
         array = NULL;
@@ -253,8 +250,7 @@ int* splitNumbers(char* line, int number){
    if(count == number){
        return array;
    } else {
-       printf("Expect %i and counted %i\n", number, count);
-       printf("Corrupted file\n");
+       printf("File is corrupt, the instance file does not match specification\n");
        exit(EXIT_FAILURE);
    }
 }
