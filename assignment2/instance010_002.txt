@@ -1,0 +1,26 @@
+#area [0, MAX_X] x [0, MAX_Y]
+100	100
+#number of points NUM_PT
+10
+#coordinates
+51	41
+85	79
+30	44
+24	71
+7	87
+67	70
+42	95
+93	43
+26	28
+52	33
+#end of instance
+# edges of the MST by Prim’s algorithm:
+0 9 9
+0 2 24
+2 8 20
+2 3 33
+3 4 33
+3 6 42
+3 7 44
+7 1 44
+1 5 27

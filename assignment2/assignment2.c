@@ -102,6 +102,8 @@ void planeToTerminal(Plane plane);
 
 void printPlane(Plane plane, char* options);
 
+void printMST(int** MST, int size, char* filename, char* option);
+
 /////////////////////////////////////////////////
 //
 // GEN DATA
@@ -175,7 +177,6 @@ int main(int argc, char** argv){
             return -1;
         }
         plane.generation = getGeneration(filename);
-
         plane = getFileParameters(lines);
         correctFile = checkFile(plane);
         free(lines);
@@ -187,36 +188,23 @@ int main(int argc, char** argv){
         return -2;
     }
 
-    // A hack to test if we opened a file
-    if(filename != NULL){
-        printPlane(plane, options);
-    }
-
-    // The hack is needed because plane.generation will only be less than plane.total_gen when
-    // the user inputs data through the terminal
-    while(plane.generation < plane.total_gen){
-        plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y);
-        printPlane(plane, options);
-        plane.generation++;
-    }
-
-
-    MST = prim(plane);
-    printf( "# edges of the MST by Prim’s algorithm:\n");
-    for(int i=0; i < plane.instance_size-1; i++){
-        printf("%i %i %i\n", MST[i][0], MST[i][1], MST[i][2]);
-    }
     
-    if(filename != NULL && options != NULL && strcmp(options, "output")==0){
-        fp = fopen(filename, "a");
-        fprintf(fp, "# edges of the MST by Prim’s algorithm:\n");
-        for(int i=0; i < plane.instance_size-1; i++){
-          fprintf(fp, "%i %i %i\n", MST[i][0], MST[i][1], MST[i][2]);
+    if(filename != NULL){
+    // If we opened up a file, the Plane instance is all ready generated for us.
+        printPlane(plane, options);
+        MST = prim(plane);
+        printMST(MST,plane.instance_size, filename, options);
+    } else {
+        while(plane.generation < plane.total_gen){
+    // If not we need to generate instances for the number of planes required
+            plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y);
+            printPlane(plane, options);
+            filename = genFilename(plane.NUM_PT, plane.generation);
+            MST = prim(plane);
+            printMST(MST,plane.instance_size, filename, options);
+            plane.generation++;
         }
-        fclose(fp);
     }
-
-    printf("Total weight: %i\n", totalWeight(MST, plane.instance_size-1));
     free(plane.instance);
 
     return 0;
@@ -404,6 +392,7 @@ int getGeneration(char* filename){
     char* genChar;
     char* ptr;
     int index;
+    int gen;
     ptr = strchr(filename, '_');
     if(ptr != NULL){
         index = ptr - filename;
@@ -411,8 +400,7 @@ int getGeneration(char* filename){
     } else {
         return -1;
     }
-    int gen = atoi(genChar);
-    return gen;
+    return atoi(genChar);
 }
 Plane getParameters(void){
     // Prompts user for the input to construct planes
@@ -541,6 +529,7 @@ bool planeToFile(char* filename, Plane plane){
     }
     fprintf(newFile, "#end of instance\n");
     fclose(newFile);
+    //free(filename);
     return true;
 }
 
@@ -566,25 +555,34 @@ void printPlane(Plane plane, char* options){
     if(options != NULL && strcmp(options, "output") == 0 ){
         char* filename = genFilename(plane.NUM_PT, plane.generation);
         planeToFile(filename, plane);
-
         printf("%s created\n", filename);
-        free(filename);
     } else {
         planeToTerminal(plane);
     }
+    
 }
 
-/*void printMST(int**, size, char* options){
+void printMST(int** MST,int size,char* filename, char* options){
     // Determine, based on the options being passed in, how to print the given Plane
-    if(options != NULL && strcmp(options, "output") == 0 ){
-        planeToFile(filename, plane);
-
-        printf("%s created\n", filename);
-        free(filename);
+    if(options != NULL && strcmp(options, "output")==0){
+        
+        fp = fopen(filename, "a");
+        fprintf(fp, "# edges of the MST by Prim’s algorithm:\n");
+        for(int i=0; i < size-1; i++){
+            fprintf(fp, "%i %i %i\n", MST[i][0], MST[i][1], MST[i][2]);
+        }
+        printf("Total weight: %i\n", totalWeight(MST, size-1));
+        fclose(fp);
     } else {
-        mstToTerminal(plane);
+        printf( "# edges of the MST by Prim’s algorithm:\n");
+        for(int i=0; i < size-1; i++){
+            printf("%i %i %i\n", MST[i][0], MST[i][1], MST[i][2]);
+        }
+        printf("Total weight: %i\n", totalWeight(MST, size-1));
     }
-}*/
+}
+        
+
 /////////////////////////////////////////////////
 //
 // GEN DATA
