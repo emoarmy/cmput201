@@ -44,7 +44,7 @@ typedef struct
 // HELPERS
 //
 ////////////////////////////////////////////////
-int* splitNumbers(char* line);
+int* splitNumbers(char* line, int number);
 
 char* genFilename(int numberOfPoints, int index);
 
@@ -202,11 +202,12 @@ int main(int argc, char** argv){
 
 
     MST = prim(plane);
+    printf( "# edges of the MST by Prim’s algorithm:\n");
     for(int i=0; i < plane.instance_size-1; i++){
-        printf( "# edges of the MST by Prim’s algorithm:\t");
         printf("%i %i %i\n", MST[i][0], MST[i][1], MST[i][2]);
     }
-    if(filename != NULL){
+    
+    if(filename != NULL && options != NULL && strcmp(options, "output")==0){
         fp = fopen(filename, "a");
         fprintf(fp, "# edges of the MST by Prim’s algorithm:\n");
         for(int i=0; i < plane.instance_size-1; i++){
@@ -215,7 +216,7 @@ int main(int argc, char** argv){
         fclose(fp);
     }
 
-    printf("Total weight: %i", totalWeight(MST, plane.instance_size-1));
+    printf("Total weight: %i\n", totalWeight(MST, plane.instance_size-1));
     free(plane.instance);
 
     return 0;
@@ -227,21 +228,35 @@ int main(int argc, char** argv){
 // HELPERS
 //
 ////////////////////////////////////////////////
-int* splitNumbers(char* line){
+int* splitNumbers(char* line, int number){
     //Split numbers in a string based on the \t delimiter"
     int *array = malloc(sizeof(int)*2) ; // Hard coded because each line in the sample file has at most 2 ints.
-    char** strings;
-    // max size of any string
-    char* astring[10];
-    strings = astring;
+    int number2;
+    int count = 0;
+    int offset = 0;
+    int total_offset =  0;
+
+    // check for a blank line
     if(strcmp(&line[0], " ") != 0){
-        for(int i=0; (*strings = strsep(&line, " \t")) != NULL; i++){
-            array[i] = atoi(*strings);
+        //for(int i=0; (*strings = strsep(&line, " \t")) != NULL; i++){
+        for(int i=0; (sscanf(line + total_offset, "%d%n", &number2, &offset))==1; i++){
+            printf("Number = %i\n", number2);
+            total_offset += offset;
+            array[i] = number2;
+            printf("Count %i, number: %i\n", count, array[i]);
+            count++;
+
         }
     } else {
         array = NULL;
     }
-   return array;
+   if(count == number){
+       return array;
+   } else {
+       printf("Expect %i and counted %i\n", number, count);
+       printf("Corrupted file\n");
+       exit(EXIT_FAILURE);
+   }
 }
 
 
@@ -484,18 +499,18 @@ Plane getFileParameters(char* line[]){
         if(!isComment(line[i])){
             //First instance of text from the array that is not a comment should be max_x and max_y
             if(index == 0){
-                temp = splitNumbers(line[i]);
+                temp = splitNumbers(line[i],2);
                 plane.MAX_X[1] = temp[0];
                 plane.MAX_Y[1] = temp[1];
             }
             //second instance of text should be total number of points
             if(index == 1){
-                temp = splitNumbers(line[i]);
+                temp = splitNumbers(line[i],1);
                 plane.NUM_PT = temp[0];
             }
             //Anyone after that until the end of the array hould be instances
             if(index >= 2 && strcmp(line[i], "\0") !=0){
-                temp = splitNumbers(line[i]);
+                temp = splitNumbers(line[i],2);
                 plane.instance_size++;
                 instance[index-2] = temp;
             }
@@ -563,6 +578,17 @@ void printPlane(Plane plane, char* options){
     }
 }
 
+/*void printMST(int**, size, char* options){
+    // Determine, based on the options being passed in, how to print the given Plane
+    if(options != NULL && strcmp(options, "output") == 0 ){
+        planeToFile(filename, plane);
+
+        printf("%s created\n", filename);
+        free(filename);
+    } else {
+        mstToTerminal(plane);
+    }
+}*/
 /////////////////////////////////////////////////
 //
 // GEN DATA
