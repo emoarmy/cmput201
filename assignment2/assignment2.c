@@ -100,7 +100,7 @@ bool planeToFile(char* filename, Plane plane);
 
 void planeToTerminal(Plane plane);
 
-void printPlane(Plane plane, char* options);
+void printPlane(Plane plane,char* filename, char* options);
 
 void printMST(int** MST, int size, char* filename, char* option);
 
@@ -127,7 +127,7 @@ void appendWeight(int* instance, FILE* filename);
 
 int* addVisited(int* visited, int len, int newPoint);
 
-int** prim(Plane plane);
+int** prims(Plane plane);
 
 int breakTie(int** coords, int visited, int unvisited, int minNodeUnvis);
 
@@ -191,17 +191,25 @@ int main(int argc, char** argv){
     
     if(filename != NULL){
     // If we opened up a file, the Plane instance is all ready generated for us.
-        printPlane(plane, options);
-        MST = prim(plane);
-        printMST(MST,plane.instance_size, filename, options);
+        printPlane(plane, filename, options);
+        if(plane.instance_size > 1){
+            MST = prims(plane);
+            printMST(MST,plane.instance_size, filename, options);
+        } else {
+            printf("Can not generate MST, insufficient nodes \n");
+        }
     } else {
         while(plane.generation < plane.total_gen){
     // If not we need to generate instances for the number of planes required
             plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y);
-            printPlane(plane, options);
+            printPlane(plane, NULL, options);
             filename = genFilename(plane.NUM_PT, plane.generation);
-            MST = prim(plane);
-            printMST(MST,plane.instance_size, filename, options);
+            if(plane.instance_size > 1){
+                MST = prims(plane);
+                printMST(MST,plane.instance_size, filename, options);
+            } else {
+                printf("Can not generate MST, insufficient nodes \n");
+            }
             plane.generation++;
         }
     }
@@ -392,7 +400,6 @@ int getGeneration(char* filename){
     char* genChar;
     char* ptr;
     int index;
-    int gen;
     ptr = strchr(filename, '_');
     if(ptr != NULL){
         index = ptr - filename;
@@ -550,12 +557,15 @@ void planeToTerminal(Plane plane){
     printf("#end of instance\n");
 }
 
-void printPlane(Plane plane, char* options){
+void printPlane(Plane plane, char* filename, char* options){
     // Determine, based on the options being passed in, how to print the given Plane
-    if(options != NULL && strcmp(options, "output") == 0 ){
+    if(filename == NULL && options != NULL && strcmp(options, "output") == 0 ){
         char* filename = genFilename(plane.NUM_PT, plane.generation);
         planeToFile(filename, plane);
         printf("%s created\n", filename);
+    } else if(filename != NULL && options != NULL && strcmp(options, "output") == 0 ) {
+       planeToFile(filename, plane);
+       printf("%s created\n", filename);
     } else {
         planeToTerminal(plane);
     }
@@ -569,16 +579,16 @@ void printMST(int** MST,int size,char* filename, char* options){
         fp = fopen(filename, "a");
         fprintf(fp, "# edges of the MST by Prim’s algorithm:\n");
         for(int i=0; i < size-1; i++){
-            fprintf(fp, "%i %i %i\n", MST[i][0], MST[i][1], MST[i][2]);
+            fprintf(fp, "%i %i %i\n", MST[i][0]+1, MST[i][1]+1, MST[i][2]);
         }
-        printf("Total weight: %i\n", totalWeight(MST, size-1));
+        fprintf(fp, "# total weight of the MST by Prim's algorithm is %i\n", totalWeight(MST, size-1));
         fclose(fp);
     } else {
         printf( "# edges of the MST by Prim’s algorithm:\n");
         for(int i=0; i < size-1; i++){
-            printf("%i %i %i\n", MST[i][0], MST[i][1], MST[i][2]);
+            printf("%i %i %i\n", MST[i][0]+1, MST[i][1]+1, MST[i][2]);
         }
-        printf("Total weight: %i\n", totalWeight(MST, size-1));
+        printf("# total weight of the MST by Prim's algorithm is %i\n", totalWeight(MST, size-1));
     }
 }
         
@@ -656,15 +666,15 @@ void removeVisited(int* unvisited, int len, int pos){
 }
 
 
-int** prim(Plane plane){
+int** prims(Plane plane){
     // Returns a MST of format indices1, indice2, weight;
     int visited[plane.instance_size];
     int unvisited[plane.instance_size];
     int* newEdge;
-    int sizeUnvisited = plane.instance_size-1;
+   int sizeUnvisited = plane.instance_size-1;
     int sizeVisited = 0;
     int** MST =  malloc(sizeof(int)*3*plane.instance_size);
-
+    
     //initialize unvisited
     for(int i=0; i < plane.instance_size-1; i++){
       unvisited[i] = i+1;

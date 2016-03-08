@@ -14,3 +14,14 @@
 4	26
 69	75
 #end of instance
+# edges of the MST by Prim’s algorithm:
+0 9 28
+9 1 15
+1 6 38
+1 2 38
+2 4 24
+4 7 38
+7 3 30
+3 5 33
+5 8 12
+# total weight of the MST by Prim's algorithm is 256
