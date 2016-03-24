@@ -139,8 +139,6 @@ int* findMin(int** coords, int* visited, int sizeVisited, int* unvisited, int si
 
 int totalWeight(int** MST, int length);
 
-int* nodeDegree(int** MST, int size);
-
 /////////////////////////////////////////////////
 //
 // MAIN
@@ -157,7 +155,6 @@ int main(int argc, char** argv){
     char* options = NULL;
     bool correctFile = true;
     int** MST;
-    int* degrees;
     //initiallize rand() with current time
     srand(time(NULL));
 
@@ -200,8 +197,6 @@ int main(int argc, char** argv){
         if(plane.instance_size > 1){
             MST = prims(plane);
             printMST(MST,plane.instance_size, filename, options);
-            
-            degrees = nodeDegree(MST, plane.instance_size-1);
         } else {
             printf("Can not generate MST, insufficient nodes \n");
         }
@@ -214,7 +209,6 @@ int main(int argc, char** argv){
             if(plane.instance_size > 1){
                 MST = prims(plane);
                 printMST(MST,plane.instance_size, filename, options);
-                degrees = nodeDegree(MST, plane.instance_size-1);
             } else {
                 printf("Can not generate MST, insufficient nodes \n");
             }
@@ -222,8 +216,6 @@ int main(int argc, char** argv){
         }
     }
 
-    // count degrees
-   
     // Need to create code to free plane.instance and and sub arrays of instance
     free(plane.instance);
 
@@ -591,7 +583,7 @@ void printMST(int** MST,int size,char* filename, char* options){
         fp = fopen(filename, "a");
         fprintf(fp, "# edges of the MST by Prim’s algorithm:\n");
         for(int i=0; i < size-1; i++){
-            fprintf(fp, "%i %i %i\n", MST[i][0], MST[i][1], MST[i][2]);
+            fprintf(fp, "%i %i %i\n", MST[i][0]+1, MST[i][1]+1, MST[i][2]);
         }
         fprintf(fp, "# total weight of the MST by Prim's algorithm is %i\n", totalWeight(MST, size-1));
         fclose(fp);
@@ -599,7 +591,7 @@ void printMST(int** MST,int size,char* filename, char* options){
         //print to terminal
         printf( "# edges of the MST by Prim’s algorithm:\n");
         for(int i=0; i < size-1; i++){
-            printf("%i %i %i\n", MST[i][0], MST[i][1], MST[i][2]);
+            printf("%i %i %i\n", MST[i][0]+1, MST[i][1]+1, MST[i][2]);
         }
         printf("# total weight of the MST by Prim's algorithm is %i\n", totalWeight(MST, size-1));
     }
@@ -787,19 +779,4 @@ int totalWeight(int** MST, int length){
         total += MST[i][2];
     }
     return total;
-}
-
-int* nodeDegree(int** MST, int size){
-    int* degrees = malloc(sizeof(int)*(size+1));
-    int count;
-    for(int i=0; i< size+1; i++){
-        count=0;
-        for(int j=0; j< size; j++){
-            if(MST[j][0] == i || MST[j][1] ==i){
-                count++;
-            }
-        }
-        degrees[i]=count;
-    }
-    return degrees;
 }

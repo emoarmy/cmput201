@@ -13,7 +13,8 @@
 70	70
 70	30
 50	50
-45	0# edges of the MST by Prim’s algorithm:
+45	0
+# edges of the MST by Prim’s algorithm:
 0 9 45
 9 4 45
 4 5 40
