@@ -34,7 +34,6 @@ int main(void){
     
     printf("Smallest word: %s\n", shortestWord);
     printf("Largest word: %s\n", longestWord);
-
 }
 
 

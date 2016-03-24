@@ -1,0 +1,39 @@
+# 1 "part3.c"
+# 1 "<built-in>" 1
+# 1 "<built-in>" 3
+# 330 "<built-in>" 3
+# 1 "<command line>" 1
+# 1 "<built-in>" 2
+# 1 "part3.c" 2
+
+
+
+
+
+
+
+
+int main(void){
+
+    int a[= 10], i, j, k , m;
+
+    i = j;
+
+
+
+
+    i = 10 * J+1;
+
+    i = j-k;
+    i = ((((J)*(J)))*(((J)*(J))));
+    i = (((j)*(j))*(j));
+    i = jk;
+    puts("i" "j");
+
+
+    i = SQR(j);
+
+    i = (j);
+
+    return 0;
+}
