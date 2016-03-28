@@ -27,11 +27,11 @@ int main(void){
     i = j-k;
     i = ((((J)*(J)))*(((J)*(J))));
     i = (((j)*(j))*(j));
-    i = jk;
+    i = jk;     //error
     puts("i" "j");
 
 
-    i = SQR(j);
+    i = SQR(j); //error
 
     i = (j);
 

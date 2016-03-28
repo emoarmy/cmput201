@@ -52,7 +52,6 @@ bool isPalindrome(char* toCheck, int length){
 
 bool isPalindromePoint(char *toCheck, int length){
     char* end = toCheck + length;
-
     while(&toCheck != &end){
         if(*toCheck != *end){
             return false;

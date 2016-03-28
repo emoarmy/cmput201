@@ -3,8 +3,8 @@
 #define SUB(x,y) x-y
 #define SQR(x) ((x)*(x))
 #define CUBE(x) (SQR(x)*(x))
-#define M1(x,y) x##y
-#define M2(x,y) #x #y
+#define M1(x,y) x##y (concat)
+#define M2(x,y) #x #y (string)
 
 int main(void){
 
@@ -44,7 +44,7 @@ int main(void){
     i = ((j)*(j))*((j)*(j));
     i = (j*j)*(j);
     i = j##k
-    puts(#i #j); //Error
+    puts(#i #j);
 
 
     i = SQR(j); //Error
