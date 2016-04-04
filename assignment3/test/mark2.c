@@ -24,7 +24,6 @@ struct tree {
     Path           path;
     int            pathLength;
     int            overlap;
-    int            totalOverlap;
     int            indegree;
     struct tree   *child[7];
     struct tree   *parent;
@@ -217,7 +216,7 @@ int findMaxOverlap(RST* steinerTree, Path* bestPath,int** MST, int mstIndex, int
     int overlap = 0;
     int maxOverlap= 0;
     for(int i=0; i < mstIndex; i++){
-        
+
     }
 
 

@@ -2,15 +2,15 @@
 
 CC=gcc
 CFLAGS= -Wall -std=c99 -g
-OBJS = mark2.o BST.o genPlane.o
+OBJS = assignment3.o BST.o genPlane.o
 
 all: assignment
 
 assignment: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o mark2
+	$(CC) $(CFLAGS) $(OBJS) -o assignment3
 
 assignment3.o: genPlane.h BST.h plane.h
-	$(CC) $(CFLAGS) -c mark2.c
+	$(CC) $(CFLAGS) -c assignment3.c
 
 # assignment: $(OBJS)
 # 	$(CC) $(CFLAGS) $(OBJS) -o assignment3
