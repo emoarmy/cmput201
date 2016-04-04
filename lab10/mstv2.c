@@ -39,16 +39,16 @@ int main(void){
     int index=0;
     char temp;
 
-    
+
     printf("Filename: ");
 
     while(scanf("%c", &temp)!=0 && temp != '\n' && index < 100){
-        name[index] = temp; 
+        name[index] = temp;
         index++;
     }
     printf("name %s", name);
     lines = readFile(name);
-    
+
     mst_size = grabMST(lines, mst);
 
     if(mst_size < 1){
@@ -58,9 +58,9 @@ int main(void){
 
     point* root = newPoint(0, NULL, 0);
     buildTree(root, mst, mst_size);
-    
+
     printList(root,0);
-    
+
     freeMST(mst, mst_size);
 }
 
@@ -155,7 +155,7 @@ int findRoot(int** instance, int length){
     for(int i=0; i<length; i++){
        count[instance[i][1]]++;
     }
-    
+
     // search through count for the index parent
     for(int i=0; i<length; i++){
         if(count[i]==0){

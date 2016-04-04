@@ -25,16 +25,12 @@ struct tree {
     int            pathLength;
     int            overlap;
     int            totalOverlap;
-    struct tree   *xTraversal;
-    struct tree   *yTraversal;
+    int            indegree;
+    struct tree   *child[7];
     struct tree   *parent;
 };
 
 typedef struct tree RST;
-
-
-
-RST* calcRST(int** instance, int** MST, int instance_length);
 
 int findSharedPath(int** MST, int start, int index);
 
@@ -46,7 +42,10 @@ int findMaxOverlap(RST* steinerTree, Path currentPath,int** MST, int index);
 
 int findSharedAxis(Path pathA, Path pathB);
 
-void calcRSTrecursive(RST* root, int index, int** instance, int** MST,int axis, int length);
+int findRoot(int** instance, int length);
+
+//void buildTree(RST* root, int index, int** instance, int** MST,int axis, int length);
+void buildTree(RST* root, int** instance, int** mst, int mst_length);
 
 bool inRange(int number, int coord1, int coord2);
 
@@ -61,6 +60,8 @@ void printPath(Path path);
 void adjustTotalOverlap(RST* node, int overlap);
 
 void printShortestPath(RST* root);
+
+void printTabs(int depth);
 
 // Must check for errors in instance, if so output error to console.
 // If option output is given, output file to a text
@@ -136,55 +137,18 @@ int main(int argc, char** argv){
             plane.generation++;
         }
     }
-    RST* tree;
-    tree =calcRST(plane.instance, MST, plane.instance_size);
+    RST* root;
+    int rootIndex = findRoot(MST, plane.instance_size-1);
+    printf("Root index %i\n", rootIndex);
+    root = buildNode(NULL, rootIndex, NULL, 0, 0 );
+    buildTree(root, plane.instance, MST, plane.instance_size-1);
     // Need to create code to free plane.instance and and sub arrays of instance
-    //printList(tree,0);
-    printShortestPath(tree);
+    printList(root,0);
+    // printShortestPath(tree);
     free(plane.instance);
 
     // need to free MST
     return 0;
-}
-
-
-RST* calcRST(int** instance, int** MST, int instance_length){
-    RST* tree = NULL;
-    int index =0;
-    tree =  buildNode(NULL, 0, NULL, 0, 0);
-    calcRSTrecursive(tree, index, instance, MST,0, instance_length-1);
-    calcRSTrecursive(tree, index, instance, MST,1, instance_length-1);
-    return tree;
-}
-// Need to solve where and index comes froms
-void calcRSTrecursive(RST* root, int index, int** instance, int** MST,int axis, int length){
-    if(length ==0){
-        return;
-    } else {
-        RST* newNode;
-        int distance = MST[index][2];
-        int* nodeA = instance[MST[index][0]];
-        int* nodeB = instance[MST[index][1]];
-
-
-        Path currentPath = buildPath(nodeA, nodeB, axis);
-
-        int maxOverlap = findMaxOverlap(root, currentPath, MST, index);
-        int minimizedDistance = distance - maxOverlap;  //Total distance covered so far
-
-        newNode = buildNode(root, index, currentPath, minimizedDistance, maxOverlap);
-        adjustTotalOverlap(root, maxOverlap);
-        if(axis ==0){
-            root->xTraversal = newNode;
-        } else {
-            root->yTraversal = newNode;
-        }
-
-        index++;
-        length--;
-        calcRSTrecursive(newNode, index, instance, MST, 0, length);
-        calcRSTrecursive(newNode, index, instance, MST, 1, length);
-    }
 }
 
 int findSharedPath(int** MST, int start, int index){
@@ -237,6 +201,7 @@ int calcOverlap(Path pathA, int posSharedA, Path pathB){
     }
     return 0;
 }
+
 int findSharedNode(int** MST,int pathIndexA, int pathIndexB){
     //find the node that PathA has in common with PathB and return the index of the node form A
     if(MST[pathIndexA][0] == MST[pathIndexB][0] || MST[pathIndexA][0] == MST[pathIndexB][1]){
@@ -244,26 +209,31 @@ int findSharedNode(int** MST,int pathIndexA, int pathIndexB){
     } else if(MST[pathIndexA][1] == MST[pathIndexB][0] || MST[pathIndexA][1] == MST[pathIndexB][1]){
         return 1;
     }
-
     return -1;
 }
-int findMaxOverlap(RST* steinerTree, Path currentPath,int** MST, int index){
+
+int findMaxOverlap(RST* steinerTree, Path* bestPath,int** MST, int mstIndex, int index){
     int start=-1;
     int overlap = 0;
     int maxOverlap= 0;
-    if(start < index){
-        do {
-            start++;
-            start= findSharedPath(MST, start, index);
-            if(start >= 0){
-                int sharedAIndex = findSharedNode(MST, index, start);
-                overlap = calcOverlap(currentPath, sharedAIndex, steinerTree->path);
-            }
-            if(overlap > maxOverlap){
-                maxOverlap = overlap;
-            }
-        }while(start != -1 && start < index);
+    for(int i=0; i < mstIndex; i++){
+        
     }
+
+
+    // if(start < index){
+    //     do {
+    //         start++;
+    //         start= findSharedPath(MST, start, index);
+    //         if(start >= 0){
+    //             int sharedAIndex = findSharedNode(MST, index, start);
+    //             overlap = calcOverlap(currentPath, sharedAIndex, steinerTree->path);
+    //         }
+    //         if(overlap > maxOverlap){
+    //             maxOverlap = overlap;
+    //         }
+    //     }while(start != -1 && start < index);
+    // }
     return maxOverlap;
 }
 
@@ -271,7 +241,6 @@ void adjustTotalOverlap(RST* node, int overlap){
     if(node == NULL){
         return;
     }
-
     node->totalOverlap += overlap;
     adjustTotalOverlap(node->parent, overlap);
 }
@@ -317,7 +286,6 @@ Path buildPath(int* node1, int* node2, int axis){
     return path;
 }
 
-
 RST* buildNode(RST* parent, int index, Path path, int pathLength,int overlap){
     RST* newNode = malloc(sizeof(RST));
     newNode->index = index;
@@ -326,25 +294,37 @@ RST* buildNode(RST* parent, int index, Path path, int pathLength,int overlap){
     newNode->parent = parent;
     newNode->overlap = overlap;
     newNode->totalOverlap = overlap;
+    newNode->indegree=0;
 
-    newNode->xTraversal = NULL;
-    newNode->yTraversal = NULL;
-
+    for(int i=0; i< 7; i++){
+        newNode->child[i]=NULL;
+    }
     return newNode;
 }
 
-/* void buildTree(point* root, int** mst, int mst_length){ */
-/*     for(int i=0; i< mst_length; i++){ */
-/*         if(mst[i][0] == root->idx){ */
-/*             //this must contain a child */
-/*             point* child = newPoint(mst[i][1], root, mst[i][2]); */
-/*             root->child[root->indegree] = child; */
-/*             root->indegree++; */
-/*             buildTree(child, mst, mst_length); */
-/*         } */
-/*     } */
-/*     return; */
-/* }; */
+void buildTree(RST* root, int** instance, int** mst, int mst_length){
+    for(int i=0; i< mst_length; i++){
+        if(mst[i][0] == root->index){
+            int mstIndex = i;
+            //this must contain a child
+            path = findMaxOverlap();
+            RST* child = buildNode(root, mst[i][1],NULL, mst[i][2], 0);
+            root->child[root->indegree] = child;
+            root->indegree++;
+            buildTree(child, instance, mst, mst_length);
+        }
+    }
+    return;
+};
+
+void freeMST(int** instance, int length){
+    for(int i =0; i< length; i++){
+        free(instance[i]);
+    }
+    free(instance);
+    return;
+}
+
 int findRoot(int** instance, int length){
     int count[length];
     int search;
@@ -378,54 +358,29 @@ int findRoot(int** instance, int length){
 void printPath(Path path){
     printf("[%i, %i] -> [%i, %i] -> [%i, %i]\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
 }
+
 void printList(RST* node, int depth) {
     RST* current = node;
     if (depth==0){
         printf("root is %i\n", current->index);
     }
-    printf("\n");
-    for(int i =0; i< depth; i++){
-            printf("\t");
+    printTabs(depth);
+    printf("point[%i] has distance %i\n", current->index, current->pathLength);
+    printTabs(depth);
+    if(current->indegree >0){
+        printf("point[%i] has in-degree %i:\n", current->index, current->indegree);
+    } else {
+        printf("point[%i] has in-degree %i//\n", current->index, current->indegree);
     }
-    printf("Node index: %i\n", current->index);
-    for(int i =0; i< depth; i++){
-            printf("\t");
-    }
-    printf("Node distance: %i\n", current->pathLength);
-    for(int i =0; i< depth; i++){
-            printf("\t");
-    }
-    printf("Node maxOverlap %i\n", current->overlap);
-    for(int i =0; i< depth; i++){
-            printf("\t");
-    }
-    printf("Node totalOverlap %i\n", current->totalOverlap);
-    for(int i =0; i< depth; i++){
-            printf("\t");
-    }
-    depth++;
-    if(current->path != NULL){
-        printPath(current->path);
-    }
-    if(current->xTraversal != NULL){
-        printList(current->xTraversal, depth);
-    }
-    if(current->yTraversal != NULL){
-        printList(current->yTraversal, depth);
+
+    for(int j=0; j< current->indegree; j++) {
+        printList(current->child[j], depth+1);
     }
 }
 
-void printShortestPath(RST* root){
-    if (root->xTraversal == NULL){
-        return;
+void printTabs(int depth){
+    for(int i =0; i< depth; i++){
+            printf("\t");
     }
-    int yOverlap = root->yTraversal->totalOverlap;
-    int xOverlap = root->xTraversal->totalOverlap;
-    if(xOverlap > yOverlap){
-        printPath(root->xTraversal->path);
-        printShortestPath(root->xTraversal);
-    } else{
-        printPath(root->yTraversal->path);
-        printShortestPath(root->yTraversal);
-    }
+    return;
 }

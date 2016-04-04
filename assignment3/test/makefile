@@ -1,16 +1,22 @@
 #===========================Makefile================================#
 
 CC=gcc
-CFLAGS= -Wall -std=c99
-OBJS = assignment3.o BST.o genPlane.o
+CFLAGS= -Wall -std=c99 -g
+OBJS = mark2.o BST.o genPlane.o
 
-all: assignment clean
+all: assignment
 
 assignment: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o assignment3
+	$(CC) $(CFLAGS) $(OBJS) -o mark2
 
 assignment3.o: genPlane.h BST.h plane.h
-	$(CC) $(CFLAGS) -c assignment3.c
+	$(CC) $(CFLAGS) -c mark2.c
+
+# assignment: $(OBJS)
+# 	$(CC) $(CFLAGS) $(OBJS) -o assignment3
+
+# assignment3.o: genPlane.h BST.h plane.h
+# 	$(CC) $(CFLAGS) -c assignment3.c
 
 genPlane.o: genPlane.c genPlane.h plane.h
 	$(CC) $(CFLAGS) -c genPlane.c
