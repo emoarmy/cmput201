@@ -189,8 +189,7 @@ int main(int argc, char** argv){
     printList(root,0);
     printf("Overlap is %i\n", maxOverlap(root));
     //printf("Distance is %i\n", totalDistance(root));
-    free(plane.instance);
-
+    freePlane(plane);
 
     // need to free MST
     return 0;
@@ -649,4 +648,38 @@ int totalDistance(RST* root){
         distance += totalDistance(root->child[i]);
     }
     return distance;
+}
+
+void freeDTree(dTree* root){
+    if(root == NULL){
+        return;
+    }
+    freeDTree(root->xTraversal);
+    freeDTree(root->yTraversal);
+    freePath(root->path);
+    free(root);
+}
+void freePath(Path path){
+    if(path == NULL){
+        return;
+    }
+    for(int i=0; i<3; i++){
+        free(path[i]);
+    }
+    free(path);
+}
+void freeRST(RST* root){
+    if(root->indegree == 0){
+        freePath(root->path);
+        free(root);
+        return;
+    }
+    for(int i=0; i<root->indegree; i++){
+        freeRST(root->child[i]);
+    }
+    freePath(root->path);
+    if(root == NULL){
+        return;
+    }
+    free(root);
 }
