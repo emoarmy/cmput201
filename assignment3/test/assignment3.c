@@ -103,6 +103,7 @@ Path copyPath(Path toCopy);
 
 int maxOverlap(RST* root);
 
+// int totalDistance(RST* root);
 // Must check for errors in instance, if so output error to console.
 // If option output is given, output file to a text
 // If option output is not given output to screen
@@ -186,7 +187,8 @@ int main(int argc, char** argv){
 
     // Need to create code to free plane.instance and and sub arrays of instance
     printList(root,0);
-    printf("Overlap is %i", maxOverlap(root));
+    printf("Overlap is %i\n", maxOverlap(root));
+    //printf("Distance is %i\n", totalDistance(root));
     free(plane.instance);
 
 
@@ -486,7 +488,6 @@ void buildTree(RST* root, int** instance, int** mst, int mst_length){
             //this must contain a child
             int oIndex = findIndex(childPaths, mst[i][1]);
             RST* child = buildNode(root, mst[i][1],NULL, mst[i][2], 0);
-            printPath(childPaths->paths[oIndex]);
             child->path = copyPath(childPaths->paths[oIndex]);
             child->overlap = childPaths->overlap[oIndex];
             root->child[root->indegree] = child;
@@ -512,8 +513,10 @@ oPaths* findChildOverlaps(int** MST, int** instance,int mst_length, int parentIn
     if (subLength>0 && subMST != NULL){
         dTree* tree = calcDTree(instance, subMST, subLength);
         oPaths* maximalOverlap = findOverlappedPaths(tree, NULL);
+        freeMST(subMST, subLength);
         return maximalOverlap;
     }
+    freeMST(subMST, subLength);
     return NULL;
 }
 
@@ -623,10 +626,12 @@ int** buildSubMST(int** MST, int mst_length, int parentIndex, int* length){
 }
 
 void freeMST(int** instance, int length){
-    for(int i =0; i< length; i++){
-        free(instance[i]);
+    if (instance != NULL){
+        for(int i =0; i< length; i++){
+            free(instance[i]);
+        }
+        free(instance);
     }
-    free(instance);
     return;
 }
 
@@ -636,4 +641,12 @@ int maxOverlap(RST* root){
         overlap += maxOverlap(root->child[i]);
     }
     return overlap;
+}
+
+int totalDistance(RST* root){
+    int distance = root->pathLength;
+    for(int i=0; i<root->indegree; i++){
+        distance += totalDistance(root->child[i]);
+    }
+    return distance;
 }
