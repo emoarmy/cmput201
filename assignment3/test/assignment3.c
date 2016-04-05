@@ -55,7 +55,7 @@ dTree* calcDTree(int** instance, int** MST, int instance_length);
 
 int findSharedPath(int** MST, int start, int index);
 
-int calcOverlap(Path pathA, int posSharedA, Path pathB);
+int calcOverlap(Path pathA, Path pathB);
 
 int findSharedNode(int** MST,int pathIndexA, int pathIndexB);
 
@@ -108,6 +108,9 @@ void freeDTree(dTree* root);
 void freePath(Path path);
 
 void freeRST(RST* root);
+
+int recursiveFindOverlap(dTree* parent, int overlap, Path currentPath);
+
 
 // int totalDistance(RST* root);
 // Must check for errors in instance, if so output error to console.
@@ -196,7 +199,7 @@ int main(int argc, char** argv){
     printf("Overlap is %i\n", maxOverlap(root));
     //printf("Distance is %i\n", totalDistance(root));
     freeMST(MST, plane.instance_size-1);
-    freePlane(plane);
+    freePlane(&plane);
     freeRST(root);
 
 
@@ -271,7 +274,7 @@ void recursiveDTree(dTree* root, int index, int** instance, int** MST,int axis, 
 
         Path currentPath = buildPath(nodeA, nodeB, axis);
 
-        int maxOverlap = findMaxOverlap(root, currentPath, MST, index);
+        int maxOverlap = recursiveFindOverlap(root->parent, 0, root->path);
         int minimizedDistance = distance - maxOverlap;  //Total distance covered so far
 
         newNode = buildDTree(root, MST[index][1], currentPath, minimizedDistance, maxOverlap);
@@ -303,44 +306,44 @@ int findSharedPath(int** MST, int start, int index){
     }
     return -1;
 }
+//
+// int calcOverlap(Path pathA, Path pathB){
+//     int* midpointA = pathA[1];
+//     int* midpointB = pathB[1];
+//
+//     int sharedAxis = findSharedAxis(pathA, pathB);
+//
+//     if(sharedAxis==-1 || sharedAxis > 1){
+//         return 0;
+//     }
+//     sharedAxis = !sharedAxis;
+//     if(midpointA[sharedAxis] > pathA[posSharedA][sharedAxis] &&
+//              midpointB[sharedAxis] > pathA[posSharedA][sharedAxis]){
+//     // if both midpointA and midpointB exist on the graph after the point of their
+//     // shared node, there is overlap
+//     // Subtract the path
+//         if(midpointA[sharedAxis] > midpointB[sharedAxis]){
+//             return midpointB[sharedAxis] - pathA[posSharedA][sharedAxis];
+//         } else{
+//             return midpointA[sharedAxis] - pathA[posSharedA][sharedAxis];
+//         }
+//
+//     } else if(midpointA[sharedAxis] < pathA[posSharedA][sharedAxis] &&
+//                  midpointB[sharedAxis] < pathA[posSharedA][sharedAxis]){
+//     // if both midpointA and midpointB exist on the graph before the point of their
+//     // shared node, there is overlap
+//         // Find which point is closer to their point in the shared node and
+//         //subtract that from the sharedAxis position
+//         if(midpointA[sharedAxis] > midpointB[sharedAxis]){
+//             return pathA[posSharedA][sharedAxis] - midpointA[sharedAxis];
+//         } else{
+//             return pathA[posSharedA][sharedAxis] - midpointB[sharedAxis];
+//         }
+//     }
+//     return 0;
+// }
 
-int calcOverlap(Path pathA, int posSharedA, Path pathB){
-    int* midpointA = pathA[1];
-    int* midpointB = pathB[1];
-
-    int sharedAxis = findSharedAxis(pathA, pathB);
-
-    if(sharedAxis==-1 || sharedAxis > 1){
-        return 0;
-    }
-    sharedAxis = !sharedAxis;
-    if(midpointA[sharedAxis] > pathA[posSharedA][sharedAxis] &&
-             midpointB[sharedAxis] > pathA[posSharedA][sharedAxis]){
-    // if both midpointA and midpointB exist on the graph after the point of their
-    // shared node, there is overlap
-    // Subtract the path
-        if(midpointA[sharedAxis] > midpointB[sharedAxis]){
-            return midpointB[sharedAxis] - pathA[posSharedA][sharedAxis];
-        } else{
-            return midpointA[sharedAxis] - pathA[posSharedA][sharedAxis];
-        }
-
-    } else if(midpointA[sharedAxis] < pathA[posSharedA][sharedAxis] &&
-                 midpointB[sharedAxis] < pathA[posSharedA][sharedAxis]){
-    // if both midpointA and midpointB exist on the graph before the point of their
-    // shared node, there is overlap
-        // Find which point is closer to their point in the shared node and
-        //subtract that from the sharedAxis position
-        if(midpointA[sharedAxis] > midpointB[sharedAxis]){
-            return pathA[posSharedA][sharedAxis] - midpointA[sharedAxis];
-        } else{
-            return pathA[posSharedA][sharedAxis] - midpointB[sharedAxis];
-        }
-    }
-    return 0;
-}
-
-int findSharedNode(int** MST,int pathIndexA, int pathIndexB){
+int findSharedNode(int** MST, int pathIndexA, int pathIndexB){
     //find the node that PathA has in common with PathB and return the index of the node form A
     if(MST[pathIndexA][0] == MST[pathIndexB][0] || MST[pathIndexA][0] == MST[pathIndexB][1]){
         return 0;
@@ -350,26 +353,26 @@ int findSharedNode(int** MST,int pathIndexA, int pathIndexB){
 
     return -1;
 }
-
-int findMaxOverlap(dTree* steinerTree, Path currentPath,int** MST, int index){
-    int start=-1;
-    int overlap = 0;
-    int maxOverlap= 0;
-    if(start < index){
-        do {
-            start++;
-            start= findSharedPath(MST, start, index);
-            if(start >= 0){
-                int sharedAIndex = findSharedNode(MST, index, start);
-                overlap = calcOverlap(currentPath, sharedAIndex, steinerTree->path);
-            }
-            if(overlap > maxOverlap){
-                maxOverlap = overlap;
-            }
-        }while(start != -1 && start < index);
-    }
-    return maxOverlap;
-}
+// Need to rework maxOverlap
+// int findMaxOverlap(dTree* steinerTree, Path currentPath,int** MST, int index){
+//     int start=-1;
+//     int overlap = 0;
+//     int maxOverlap= 0;
+//     if(start < index){
+//         do {
+//             start++;
+//             start= findSharedPath(MST, start, index);
+//             if(start >= 0){
+//                 int sharedAIndex = findSharedNode(MST, index, start);
+//                 overlap = calcOverlap(currentPath, sharedAIndex, steinerTree->path);
+//             }
+//             if(overlap > maxOverlap){
+//                 maxOverlap = overlap;
+//             }
+//         }while(start != -1 && start < index);
+//     }
+//     return maxOverlap;
+// }
 
 void adjustTotalOverlap(dTree* node, int overlap){
     if(node == NULL){
@@ -691,4 +694,54 @@ void freeRST(RST* root){
         return;
     }
     free(root);
+}
+
+int recursiveFindOverlap(dTree* parent, int overlap, Path currentPath){
+    if(parent == NULL){
+        return overlap;
+    }
+    else{
+        int currentOverlap = calcOverlap(currentPath, parent->path);
+        if (currentOverlap > overlap){
+            overlap = currentOverlap;
+        }
+        return recursiveFindOverlap(parent->parent, overlap, currentPath);
+    }
+}
+
+int calcOverlap(Path pathA, Path pathB){
+    int* midpointA = pathA[1];
+    int* midpointB = pathB[1];
+
+    int sharedAxis = findSharedAxis(pathA, pathB);
+
+    int posSharedA = 0;
+    if(sharedAxis==-1 || sharedAxis > 1){
+        return 0;
+    }
+    sharedAxis = !sharedAxis;
+    if(midpointA[sharedAxis] > pathA[posSharedA][sharedAxis] &&
+             midpointB[sharedAxis] > pathA[posSharedA][sharedAxis]){
+    // if both midpointA and midpointB exist on the graph after the point of their
+    // shared node, there is overlap
+    // Subtract the path
+        if(midpointA[sharedAxis] > midpointB[sharedAxis]){
+            return midpointB[sharedAxis] - pathA[posSharedA][sharedAxis];
+        } else{
+            return midpointA[sharedAxis] - pathA[posSharedA][sharedAxis];
+        }
+
+    } else if(midpointA[sharedAxis] < pathA[posSharedA][sharedAxis] &&
+                 midpointB[sharedAxis] < pathA[posSharedA][sharedAxis]){
+    // if both midpointA and midpointB exist on the graph before the point of their
+    // shared node, there is overlap
+        // Find which point is closer to their point in the shared node and
+        //subtract that from the sharedAxis position
+        if(midpointA[sharedAxis] > midpointB[sharedAxis]){
+            return pathA[posSharedA][sharedAxis] - midpointA[sharedAxis];
+        } else{
+            return pathA[posSharedA][sharedAxis] - midpointB[sharedAxis];
+        }
+    }
+    return 0;
 }
