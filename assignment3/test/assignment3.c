@@ -100,6 +100,9 @@ int** buildSubMST(int** MST, int mst_length, int parentIndex, int* length);
 int findIndex(oPaths* childPaths, int index);
 
 Path copyPath(Path toCopy);
+
+int maxOverlap(RST* root);
+
 // Must check for errors in instance, if so output error to console.
 // If option output is given, output file to a text
 // If option output is not given output to screen
@@ -183,6 +186,7 @@ int main(int argc, char** argv){
 
     // Need to create code to free plane.instance and and sub arrays of instance
     printList(root,0);
+    printf("Overlap is %i", maxOverlap(root));
     free(plane.instance);
 
 
@@ -626,6 +630,10 @@ void freeMST(int** instance, int length){
     return;
 }
 
-int maxOverlap(RST* root, int overlap){
-    
+int maxOverlap(RST* root){
+    int overlap = root->overlap;
+    for(int i=0; i<root->indegree; i++){
+        overlap += maxOverlap(root->child[i]);
+    }
+    return overlap;
 }
