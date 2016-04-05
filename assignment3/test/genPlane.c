@@ -402,9 +402,9 @@ int** genInstance(int numberOfPoints, int* x_array, int* y_array){
 // Clean Up
 //
 ////////////////////////////////////////////////////////////////////////////
-void freePlane(Plane plane){
-    freeInstance(plane.instance, plane.instance_length);
-    free(plane);
+void freePlane(Plane* plane){
+    freeInstance(plane->instance, plane->instance_size);
+    //free(plane);
     return;
 }
 void freeInstance(int** instance, int length){

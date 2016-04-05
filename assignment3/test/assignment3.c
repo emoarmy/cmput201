@@ -103,6 +103,12 @@ Path copyPath(Path toCopy);
 
 int maxOverlap(RST* root);
 
+void freeDTree(dTree* root);
+
+void freePath(Path path);
+
+void freeRST(RST* root);
+
 // int totalDistance(RST* root);
 // Must check for errors in instance, if so output error to console.
 // If option output is given, output file to a text
@@ -189,7 +195,10 @@ int main(int argc, char** argv){
     printList(root,0);
     printf("Overlap is %i\n", maxOverlap(root));
     //printf("Distance is %i\n", totalDistance(root));
+    freeMST(MST, plane.instance_size-1);
     freePlane(plane);
+    freeRST(root);
+
 
     // need to free MST
     return 0;
