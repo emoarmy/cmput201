@@ -4,7 +4,7 @@ CC=gcc
 CFLAGS= -Wall -std=c99 -g
 OBJS = assignment3.o BST.o genPlane.o
 
-all: assignment clean
+all: assignment
 
 assignment: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o assignment3

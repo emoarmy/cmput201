@@ -97,6 +97,8 @@ void printTabs(int depth);
 
 int** buildSubMST(int** MST, int mst_length, int parentIndex, int* length);
 
+int findIndex(oPaths* childPaths, int index);
+
 Path copyPath(Path toCopy);
 // Must check for errors in instance, if so output error to console.
 // If option output is given, output file to a text
@@ -173,20 +175,14 @@ int main(int argc, char** argv){
         }
     }
 
-    int subLength =0;
-    int** partialMST = buildSubMST(MST, plane.instance_size-1, 0, &subLength);
-        printf("subLength %i\n", subLength);
-    if (subLength>0){
-        printMST(partialMST, subLength+1, filename, options);
-    }
-    // RST* root;
-    // int rootIndex = findRoot(MST, plane.instance_size-1);
-    // printf("Root index %i\n", rootIndex);
-    // root = buildNode(NULL, rootIndex, NULL, 0, 0 );
-    // buildTree(root, plane.instance, MST, plane.instance_size-1);
+    RST* root;
+    int rootIndex = findRoot(MST, plane.instance_size-1);
+    printf("Root index %i\n", rootIndex);
+    root = buildNode(NULL, rootIndex, NULL, 0, 0 );
+    buildTree(root, plane.instance, MST, plane.instance_size-1);
 
     // Need to create code to free plane.instance and and sub arrays of instance
-    // printList(root,0);
+    printList(root,0);
     free(plane.instance);
 
 
@@ -478,12 +474,16 @@ RST* buildNode(RST* parent, int index, Path path, int pathLength,int overlap){
 
 void buildTree(RST* root, int** instance, int** mst, int mst_length){
     oPaths* childPaths = findChildOverlaps(mst, instance, mst_length, root->index);
+    if(childPaths == NULL){
+        printf("No children\n");
+    }
     for(int i=0; i< mst_length; i++){
         if(mst[i][0] == root->index){
             //this must contain a child
             int oIndex = findIndex(childPaths, mst[i][1]);
             RST* child = buildNode(root, mst[i][1],NULL, mst[i][2], 0);
-            child->path = childPaths->paths[oIndex];
+            printPath(childPaths->paths[oIndex]);
+            child->path = copyPath(childPaths->paths[oIndex]);
             child->overlap = childPaths->overlap[oIndex];
             root->child[root->indegree] = child;
             root->indegree++;
@@ -492,20 +492,27 @@ void buildTree(RST* root, int** instance, int** mst, int mst_length){
     }
     return;
 };
-int findIndex(oPaths childPaths, int index){
-    for(int i=0; i<childPaths.length; i++ ){
-        if(childPaths.index[i] == index){
+
+int findIndex(oPaths* childPaths, int index){
+    for(int i=0; i<childPaths->length; i++ ){
+        if(childPaths->index[i] == index){
             return i;
         }
     }
+    return -1;
 }
+
 oPaths* findChildOverlaps(int** MST, int** instance,int mst_length, int parentIndex){
     int subLength;
     int**  subMST = buildSubMST(MST, mst_length, parentIndex, &subLength);
-    dTree* tree = calcDTree(instance, subMST, subLength);
-    oPaths* maximalOverlap = findOverlappedPaths(tree, NULL);
-    return maximalOverlap;
+    if (subLength>0 && subMST != NULL){
+        dTree* tree = calcDTree(instance, subMST, subLength);
+        oPaths* maximalOverlap = findOverlappedPaths(tree, NULL);
+        return maximalOverlap;
+    }
+    return NULL;
 }
+
 oPaths* findOverlappedPaths(dTree* root, oPaths* max){
     if(max==NULL){
         max = malloc(sizeof(oPaths));
@@ -533,6 +540,7 @@ oPaths* findOverlappedPaths(dTree* root, oPaths* max){
         }
     }
 }
+
 Path copyPath(Path toCopy){
     Path copiedPath = malloc(sizeof(int)*6);
     for(int i=0; i<3; i++){
@@ -543,19 +551,26 @@ Path copyPath(Path toCopy){
     }
     return copiedPath;
 }
+
 void printList(RST* node, int depth) {
     RST* current = node;
     if (depth==0){
-        printf("root is %i\n", current->index);
+        printf("Root is %i\n", current->index);
     }
     printTabs(depth);
-    printf("point %i has distance %i ", current->index, current->pathLength);
+    printf("Point %i has distance %i ", current->index, current->pathLength);
     if(current->indegree >0){
         printf("and has in-degree %i:\n", current->indegree);
     } else {
         printf("and has in-degree %i//\n", current->indegree);
     }
 
+    if (depth!=0){
+        printTabs(depth);
+        printf("Point %i has overlap of %i, with path ", current->index, current->overlap);
+        printPath(current->path);
+
+    }
     for(int j=0; j< current->indegree; j++) {
         printList(current->child[j], depth+1);
     }
@@ -579,7 +594,6 @@ int** buildSubMST(int** MST, int mst_length, int parentIndex, int* length){
         if(MST[i][0] == parentIndex){
             count++;
         }
-
     }
     // If an array was created return  it or return NULL
     if(count > 0){
@@ -610,4 +624,8 @@ void freeMST(int** instance, int length){
     }
     free(instance);
     return;
+}
+
+int maxOverlap(RST* root, int overlap){
+    
 }
