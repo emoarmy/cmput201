@@ -396,3 +396,23 @@ int** genInstance(int numberOfPoints, int* x_array, int* y_array){
     }
     return instance;
 }
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Clean Up
+//
+////////////////////////////////////////////////////////////////////////////
+void freePlane(Plane plane){
+    freeInstance(plane.instance, plane.instance_length);
+    free(plane);
+    return;
+}
+void freeInstance(int** instance, int length){
+    if(instance== NULL){
+        return;
+    }
+    for(int i=0; i<length; i++){
+        free(instance[i]);
+    }
+    return;
+}

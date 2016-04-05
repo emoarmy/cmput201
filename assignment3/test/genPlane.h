@@ -77,4 +77,11 @@ int* genCoordinates(int* x_array, int* y_array );
 
 int** genInstance(int numberOfPoints, int* x_array, int* y_array);
 
+//////////////////////////////////////////////////
+//
+// Clean Up
+//
+//////////////////////////////////////////////////
+void freePlane(Plane plane);
+void freeInstance(int** instance, int length);
 #endif
