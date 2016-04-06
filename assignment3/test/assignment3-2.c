@@ -24,6 +24,7 @@ struct tree {
     int            pathLength;
     int            overlap;
     int            indegree;
+    int            done;
     struct tree   *child[7];
     struct tree   *parent;
 };
@@ -274,7 +275,7 @@ void recursiveDTree(dTree* root, int index, int** instance, int** MST,int axis, 
 
         Path currentPath = buildPath(nodeA, nodeB, axis);
 
-        int maxOverlap = recursiveFindOverlap(root, 0, currentPath);
+
         int minimizedDistance = distance - maxOverlap;  //Total distance covered so far
 
         newNode = buildDTree(root, MST[index][1], currentPath, minimizedDistance, maxOverlap);
@@ -289,6 +290,7 @@ void recursiveDTree(dTree* root, int index, int** instance, int** MST,int axis, 
         length--;
         recursiveDTree(newNode, index, instance, MST, 0, length);
         recursiveDTree(newNode, index, instance, MST, 1, length);
+        int maxOverlap = recursiveFindOverlap(root, 0, currentPath);
     }
 }
 
@@ -306,42 +308,6 @@ int findSharedPath(int** MST, int start, int index){
     }
     return -1;
 }
-//
-// int calcOverlap(Path pathA, Path pathB){
-//     int* midpointA = pathA[1];
-//     int* midpointB = pathB[1];
-//
-//     int sharedAxis = findSharedAxis(pathA, pathB);
-//
-//     if(sharedAxis==-1 || sharedAxis > 1){
-//         return 0;
-//     }
-//     sharedAxis = !sharedAxis;
-//     if(midpointA[sharedAxis] > pathA[posSharedA][sharedAxis] &&
-//              midpointB[sharedAxis] > pathA[posSharedA][sharedAxis]){
-//     // if both midpointA and midpointB exist on the graph after the point of their
-//     // shared node, there is overlap
-//     // Subtract the path
-//         if(midpointA[sharedAxis] > midpointB[sharedAxis]){
-//             return midpointB[sharedAxis] - pathA[posSharedA][sharedAxis];
-//         } else{
-//             return midpointA[sharedAxis] - pathA[posSharedA][sharedAxis];
-//         }
-//
-//     } else if(midpointA[sharedAxis] < pathA[posSharedA][sharedAxis] &&
-//                  midpointB[sharedAxis] < pathA[posSharedA][sharedAxis]){
-//     // if both midpointA and midpointB exist on the graph before the point of their
-//     // shared node, there is overlap
-//         // Find which point is closer to their point in the shared node and
-//         //subtract that from the sharedAxis position
-//         if(midpointA[sharedAxis] > midpointB[sharedAxis]){
-//             return pathA[posSharedA][sharedAxis] - midpointA[sharedAxis];
-//         } else{
-//             return pathA[posSharedA][sharedAxis] - midpointB[sharedAxis];
-//         }
-//     }
-//     return 0;
-// }
 
 int findSharedNode(int** MST, int pathIndexA, int pathIndexB){
     //find the node that PathA has in common with PathB and return the index of the node form A
@@ -353,26 +319,6 @@ int findSharedNode(int** MST, int pathIndexA, int pathIndexB){
 
     return -1;
 }
-// Need to rework maxOverlap
-// int findMaxOverlap(dTree* steinerTree, Path currentPath,int** MST, int index){
-//     int start=-1;
-//     int overlap = 0;
-//     int maxOverlap= 0;
-//     if(start < index){
-//         do {
-//             start++;
-//             start= findSharedPath(MST, start, index);
-//             if(start >= 0){
-//                 int sharedAIndex = findSharedNode(MST, index, start);
-//                 overlap = calcOverlap(currentPath, sharedAIndex, steinerTree->path);
-//             }
-//             if(overlap > maxOverlap){
-//                 maxOverlap = overlap;
-//             }
-//         }while(start != -1 && start < index);
-//     }
-//     return maxOverlap;
-// }
 
 void adjustTotalOverlap(dTree* node, int overlap){
     if(node == NULL){
@@ -521,6 +467,8 @@ int findIndex(oPaths* childPaths, int index){
 oPaths* findChildOverlaps(int** MST, int** instance,int mst_length, int parentIndex){
     int subLength;
     int**  subMST = buildSubMST(MST, mst_length, parentIndex, &subLength);
+    printMST(subMST, subLength, NULL, NULL);
+    printf("Done\n");
     if (subLength>0 && subMST != NULL){
         dTree* tree = calcDTree(instance, subMST, subLength);
         oPaths* maximalOverlap = findOverlappedPaths(tree, NULL);
@@ -609,10 +557,11 @@ int** buildSubMST(int** MST, int mst_length, int parentIndex, int* length){
         return NULL;
     }
     for(int i=0; i<mst_length; i++){
-        if(MST[i][0] == parentIndex){
+        if(MST[i][0] == parentIndex || MST[i][1]==parentIndex){
             count++;
         }
     }
+    printf("Count %i\n", count);
     // If an array was created return  it or return NULL
     if(count > 0){
         // make space in new array for X amount of children
@@ -628,8 +577,18 @@ int** buildSubMST(int** MST, int mst_length, int parentIndex, int* length){
 
                 subMST[index] = newEdge;
                 index++;
+            } else if(MST[i][1] == parentIndex){
+                // find each child and put them in the new subMST
+                int* newEdge = malloc(sizeof(int)*3);
+                newEdge[1] = MST[i][0];
+                newEdge[0] = MST[i][1];
+                newEdge[2] = MST[i][2];
+
+                subMST[index] = newEdge;
+                index++;
             }
         }
+        printf("index %i\n", index);
         return subMST;
     }
     return NULL;
@@ -648,7 +607,7 @@ void freeMST(int** instance, int length){
 
 int maxOverlap(RST* root){
     int overlap = root->overlap;
-    for(int i=0; i<root->indegree; i++){
+    for(int i=0; i < root->indegree; i++){
         overlap += maxOverlap(root->child[i]);
     }
     return overlap;
@@ -697,19 +656,22 @@ void freeRST(RST* root){
 }
 
 int recursiveFindOverlap(dTree* parent, int overlap, Path currentPath){
-    if(parent == NULL || parent->path==NULL){
+    if(parent == NULL || parent->path == NULL){
         return overlap;
-    }
-    else{
+    }else{
+        printf("parent index: %i", parent->index);
         int currentOverlap = calcOverlap(currentPath, parent->path);
         if (currentOverlap > overlap){
             overlap = currentOverlap;
         }
+
         return recursiveFindOverlap(parent->parent, overlap, currentPath);
     }
 }
 
 int calcOverlap(Path pathA, Path pathB){
+    printPath(pathA);
+    printPath(pathB);
     int* midpointA = pathA[1];
     int* midpointB = pathB[1];
 
