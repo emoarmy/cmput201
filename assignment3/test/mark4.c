@@ -123,7 +123,7 @@ void fprintPaths(RST* root, FILE* fp);
 
 float rstReduction(int overlap, int weight);
 
-void printFinal(int weight, int overlap, float reduction, char* filename);
+void printFinal(int weight, int overlap, float reduction, char* filename, char* options);
 
 // int totalDistance(RST* root);
 // Must check for errors in instance, if so output error to console.
@@ -139,6 +139,7 @@ int main(int argc, char** argv){
     int weight;
     int overlap;
     float reduction;
+    RST* root =NULL;
     //initiallize rand() with current time
     srand(time(NULL));
 
@@ -179,10 +180,21 @@ int main(int argc, char** argv){
     // If we opened up a file, the Plane instance is all ready generated for us.
         printPlane(plane, filename, options);
         if(plane.instance_size > 1){
+            //find MST using prims
             MST = prims(plane);
-            printMST(MST,plane.instance_size, filename, options);
 
-            degrees = nodeDegree(MST, plane.instance_size-1);
+            // Now for the fun part
+            // Given the MST build a (in this case, non-optimal), rectilinear steiner tree
+            root = buildRST(plane.instance, MST, plane.instance_size-1);
+            overlap = maxOverlap(root);
+
+            // Calculate weight of the MST and reduction by RST
+            weight = totalWeight(MST, plane.instance_size-1);
+            reduction = rstReduction(overlap, weight);
+
+            printMST(MST,plane.instance_size, filename, options);
+            printPaths(root, filename, options);
+            printFinal(weight, overlap, reduction, filename, options);
         } else {
             printf("Can not generate MST, insufficient nodes \n");
         }
@@ -193,15 +205,19 @@ int main(int argc, char** argv){
             printPlane(plane, NULL, options);
             filename = genFilename(plane.NUM_PT, plane.generation);
             if(plane.instance_size > 1){
+                //find MST using prims
                 MST = prims(plane);
 
-                RST* root = buildRST(plane.instance, MST, plane.instance_size-1);
+                // Now for the fun part
+                // Given the MST build a (in this case, non-optimal), rectilinear steiner tree
+                root = buildRST(plane.instance, MST, plane.instance_size-1);
                 overlap = maxOverlap(root);
 
+                // Calculate weight of the MST and reduction by RST
                 weight = totalWeight(MST, plane.instance_size-1);
                 reduction = rstReduction(overlap, weight);
+
                 printMST(MST,plane.instance_size, filename, options);
-                printf("Reduction: %f", reduction);
                 printPaths(root, filename, options);
                 printFinal(weight, overlap, reduction, filename, options);
             } else {
@@ -211,12 +227,7 @@ int main(int argc, char** argv){
         }
     }
 
-    // Now for the fun part
-    // Given the MST build a (in this case, non-optimal), rectilinear steiner tree
-    RST* root = buildRST(plane.instance, MST, plane.instance_size-1);
 
-    printList(root,0);
-    printf("Overlap is %i\n", maxOverlap(root));
 
 
     freeMST(MST, plane.instance_size-1);
@@ -826,7 +837,7 @@ void recursiveprintPaths(RST* root){
         Path path = root->path;
         printf("(%i, %i) --> (%i, %i) --> (%i, %i)\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
     } else{
-                printf("# layouts of the edges of the MST by Prim’s algorithm: ");
+                printf("# layouts of the edges of the MST by Prim’s algorithm: \n");
     }
     for(int i=0; i<root->indegree; i++){
         recursiveprintPaths(root->child[i]);
@@ -855,35 +866,17 @@ void fprintPaths(RST* root, FILE* fp){
     }
 }
 
-void printReductions(float reductions[10][10]){
-    fp = fopen("reductions.txt", "w");
-    float rowTotals = 0;
-    for(int i=0; i < 10; i++){
-        for(int j=0; j< 10; j++){
-            fprintf(fp, "%-2.2f ", reductions[i][j]);
-        }
-        fprintf(fp, "\n");
-    }
-    for(int i=0; i < 10; i++){
-        float avg = rowAvg(reductions[i]);
-        fprintf(fp, "%-2.2f\n", avg);
-        rowTotals += avg;
-    }
-    fprintf(fp, "%-2.2f", rowTotals/10.0f);
-    fclose(fp);
-}
-
-void printFinal(int weight, int overlap, float reduction, char* filename){
+void printFinal(int weight, int overlap, float reduction, char* filename, char* options){
     if(options != NULL && strcmp(options, "output")==0){
         fp = fopen(filename, "a");
         fprintf(fp, "# total weight of the MST is %d\n", weight);
-        fprintf(fp, "# total weight of the layout is %d\n", overlap);
+        fprintf(fp, "# total overlap of the layout is %d\n", overlap);
         fprintf(fp, "# reduction is %0.2f", reduction);
         fclose(fp);
     } else {
         printf("# total weight of the MST is %d\n", weight);
-        printf("# total weight of the layout is %d\n", overlap);
-        printf("# reduction is %0.2f", reduction);
+        printf("# total overlap of the layout is %d\n", overlap);
+        printf("# reduction is %0.2f\n", reduction);
     }
 }
 float rstReduction(int overlap, int weight){
@@ -930,17 +923,19 @@ void freePath(Path path){
 
 void freeRST(RST* root){
     // Free's an RST structure
-    if(root->indegree == 0){
+    if(root != NULL){
+        if(root->indegree == 0){
+            freePath(root->path);
+            free(root);
+            return;
+        }
+        for(int i=0; i<root->indegree; i++){
+            freeRST(root->child[i]);
+        }
         freePath(root->path);
+        if(root == NULL){
+            return;
+        }
         free(root);
-        return;
     }
-    for(int i=0; i<root->indegree; i++){
-        freeRST(root->child[i]);
-    }
-    freePath(root->path);
-    if(root == NULL){
-        return;
-    }
-    free(root);
 }

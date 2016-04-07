@@ -1,0 +1,31 @@
+    .data
+lock: .byte 0
+
+    .text
+main:
+    la $a0, lk
+    jal lock
+
+    la $a1, shvar
+    lw $a2, x
+    jal max
+    sw $v0, $a1
+
+    la $a0, lk
+    jal unlock
+
+lock:
+    ll $t0, 0($a0)
+    bnez $t0, wait
+    li $t0, 1
+    sc $t0, 0($t0)
+    beqz $t0, wait
+max:
+    lw $t1, $a1
+    bgt $t1, $a2, max done
+    move $a1, $t1
+max_done:
+    sw $t1, $a1
+
+unlock:
+    sb , 0($a0)

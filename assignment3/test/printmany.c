@@ -277,7 +277,7 @@ float rowAvg(float row[10]){
 void printFinal(int weight, int overlap, float reduction, char* filename){
     fp = fopen(filename, "a");
     fprintf(fp, "# total weight of the MST is %d\n", weight);
-    fprintf(fp, "# total weight of the layout is %d\n", overlap);
+    fprintf(fp, "# total overlap of the layout is %d\n", overlap);
     fprintf(fp, "# reduction is %0.2f", reduction);
     fclose(fp);
 }

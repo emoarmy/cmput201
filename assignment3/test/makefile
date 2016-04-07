@@ -15,7 +15,7 @@ all: assignment
 assignment: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o printmany
 
-printmany.o: genPlane.h BST.h plane.h
+mark4.o: genPlane.h BST.h plane.h
 	$(CC) $(CFLAGS) -c printmany.c
 
 
