@@ -707,3 +707,47 @@ int calcOverlap(Path pathA, Path pathB){
     }
     return 0;
 }
+
+
+// int** buildSubMST(int** MST, int mst_length, int parentIndex, int* length){
+//     int count = 0;
+//     int index = 0;
+//     //Find the amount of children parent has
+//     if(mst_length<1){
+//         return NULL;
+//     }
+//     for(int i=0; i<mst_length; i++){
+//         if(MST[i][0] == parentIndex || MST[i][1]==parentIndex){
+//             count++;
+//         }
+//     }
+//     // If an array was created return  it or return NULL
+//     if(count > 0){
+//         // make space in new array for X amount of children
+//         int** subMST = malloc(sizeof(int)*3*count);
+//         *length = count;
+//         for(int i=0; i<mst_length; i++){
+//             if(MST[i][0] == parentIndex){
+//                 // find each child and put them in the new subMST
+//                 int* newEdge = malloc(sizeof(int)*3);
+//                 newEdge[0] = MST[i][0];
+//                 newEdge[1] = MST[i][1];
+//                 newEdge[2] = MST[i][2];
+//
+//                 subMST[index] = newEdge;
+//                 index++;
+//             } else if(MST[i][1] == parentIndex){
+//                 // find each child and put them in the new subMST
+//                 int* newEdge = malloc(sizeof(int)*3);
+//                 newEdge[1] = MST[i][0];
+//                 newEdge[0] = MST[i][1];
+//                 newEdge[2] = MST[i][2];
+//
+//                 subMST[index] = newEdge;
+//                 index++;
+//             }
+//         }
+//         return subMST;
+//     }
+//     return NULL;
+// }
