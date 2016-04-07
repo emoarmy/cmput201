@@ -1,9 +1,0 @@
-#area [0, MAX_X] x [0, MAX_Y]
-100	100
-#number of points NUM_PT
-3
-#coordinates
-5 0
-0 5
-10 5
-#end of instance

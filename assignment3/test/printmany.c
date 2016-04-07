@@ -67,6 +67,8 @@ dTree* buildDTree(dTree* parent, int index, Path path, int pathLength,int overla
 
 void recursiveDTree(dTree* root, int index, int** instance, int** MST,int axis, int length);
 
+bool inRange(int number, int coord1, int coord2);
+
 Path buildPath(int* node1, int* node2, int axis);
 
 void printDTree(dTree* node, int depth);
@@ -115,7 +117,16 @@ int currentTraversal(Path path);
 
 void recalcOverlap(RST* root);
 
-// int totalDistance(RST* root);
+void printPaths(RST* root, char* filename, char* options);
+
+void recursiveprintPaths(RST* root);
+
+void fprintPaths(RST* root, FILE* fp);
+
+float rstReduction(int overlap, int weight);
+
+void printFinal(int weight, int overlap, float reduction, char* filename);
+
 // Must check for errors in instance, if so output error to console.
 // If option output is given, output file to a text
 // If option output is not given output to screen
@@ -123,58 +134,72 @@ int main(int argc, char** argv){
     char* filename = NULL;
     char** lines;
     Plane plane;
-    char* options = NULL;
+    char* options = "output";
     bool correctFile = true;
     int** MST = NULL;
-    int* degrees;
+    float reductions[10][10];
+    float reduction;
+    int overlap;
+    int weight;
     //initiallize rand() with current time
     srand(time(NULL));
 
+
     // Cheching for arguments, if they are greater than or equal to two, assume
     // their are options and a filename being passed in trying to be passed in.
-    if(argc >= 2){
-        filename = getFilename(argv, argc);
-        options = getOption(argv, argc);
-    }
-
+    // if(argc >= 2){
+    //     filename = getFilename(argv, argc);
+    //     options = getOption(argv, argc);
+    // }
+    //
     // Grab Data
-    if (filename == NULL){
-        plane = getParameters();
+    // if (filename == NULL){
+    //     plane = getParameters();
+    //     plane.instance_size = plane.NUM_PT;
+    // } else {
+    //     lines = readFile(filename);
+    //
+    //     // Check to see if a file was succesffully parsed
+    //     if(lines == NULL){
+    //         printf("File not found\n");
+    //         printf("Exiting...\n");
+    //         return -1;
+    //     }
+    //     plane.generation = getGeneration(filename);
+    //     plane = getFileParameters(lines);
+    //     correctFile = checkFile(plane);
+    //     free(lines);
+    // }
+    //
+    // // Ensure instances is of the correct size;
+    // if(!correctFile){
+    //     printf("File is corrupt, the instance file does not match specification\n");
+    //     return -2;
+    // }
+    //
+    //
+    // if(filename != NULL){
+    // // If we opened up a file, the Plane instance is all ready generated for us.
+    //     printPlane(plane, filename, options);
+    //     if(plane.instance_size > 1){
+    //         MST = prims(plane);
+    //         printMST(MST,plane.instance_size, filename, options);
+    //
+    //         degrees = nodeDegree(MST, plane.instance_size-1);
+    //     } else {
+    //         printf("Can not generate MST, insufficient nodes \n");
+    //     }
+    // } else {
+    for(int i=1; i<11;i++){
+        plane.total_gen = 10;
+        plane.generation = 0;
+        plane.MAX_X[1]=1000;
+        plane.MAX_Y[1]=1000;
+        plane.MAX_X[0]=0;
+        plane.MAX_Y[0]=0;
+        plane.NUM_PT = i*10;
         plane.instance_size = plane.NUM_PT;
-    } else {
-        lines = readFile(filename);
 
-        // Check to see if a file was succesffully parsed
-        if(lines == NULL){
-            printf("File not found\n");
-            printf("Exiting...\n");
-            return -1;
-        }
-        plane.generation = getGeneration(filename);
-        plane = getFileParameters(lines);
-        correctFile = checkFile(plane);
-        free(lines);
-    }
-
-    // Ensure instances is of the correct size;
-    if(!correctFile){
-        printf("File is corrupt, the instance file does not match specification\n");
-        return -2;
-    }
-
-
-    if(filename != NULL){
-    // If we opened up a file, the Plane instance is all ready generated for us.
-        printPlane(plane, filename, options);
-        if(plane.instance_size > 1){
-            MST = prims(plane);
-            printMST(MST,plane.instance_size, filename, options);
-
-            degrees = nodeDegree(MST, plane.instance_size-1);
-        } else {
-            printf("Can not generate MST, insufficient nodes \n");
-        }
-    } else {
         while(plane.generation < plane.total_gen){
     // If not we need to generate instances for the number of planes required
             plane.instance = genInstance(plane.NUM_PT, plane.MAX_X, plane.MAX_Y);
@@ -182,29 +207,37 @@ int main(int argc, char** argv){
             filename = genFilename(plane.NUM_PT, plane.generation);
             if(plane.instance_size > 1){
                 MST = prims(plane);
+                RST* root = buildRST(plane.instance, MST, plane.instance_size-1);
+                overlap = maxOverlap(root);
+                weight = totalWeight(MST, plane.instance_size-1);
+                reduction = rstReduction(overlap, weight);
+                reductions[i*10][plane.generation] = reduction;
                 printMST(MST,plane.instance_size, filename, options);
-                degrees = nodeDegree(MST, plane.instance_size-1);
+                printf("Reduction: %f", reduction);
+                printPaths(root, filename, options);
+                printFinal(weight, overlap, reduction, filename);
             } else {
                 printf("Can not generate MST, insufficient nodes \n");
             }
+
             plane.generation++;
         }
     }
 
-    // Now for the fun part
-    // Given the MST build a (in this case, non-optimal), rectilinear steiner tree
-    RST* root = buildRST(plane.instance, MST, plane.instance_size-1);
+    // // Now for the fun part
+    // // Given the MST build a (in this case, non-optimal), rectilinear steiner tree
+    // RST* root = buildRST(plane.instance, MST, plane.instance_size-1);
+    //
+    // printList(root,0);
+    // printf("Overlap is %i\n", maxOverlap(root));
 
-    printList(root,0);
-    printf("Overlap is %i\n", maxOverlap(root));
-
-
-    freeMST(MST, plane.instance_size-1);
-    freePlane(&plane);
-    freeRST(root);
-
-
-    // need to free MST
+    //
+    // freeMST(MST, plane.instance_size-1);
+    // freePlane(&plane);
+    // freeRST(root);
+    //
+    //
+    // // need to free MST
     return 0;
 }
 ///////////////////////////////////////////////////////////////////////////
@@ -212,6 +245,26 @@ int main(int argc, char** argv){
 // Trees
 //
 ///////////////////////////////////////////////////////////////////////////
+void printReductions(float reductions[10][10]){
+    fp = fopen("reductions", "r");
+    for(int i=0; i < 10; i++){
+        for(int j=0; j< 10; j++){
+            fprintf(fp, "%-2.2f ", reductions[i][j]);
+        }
+        fprintf(fp, "\n");
+    }
+}
+void printFinal(int weight, int overlap, float reduction, char* filename){
+    fp = fopen(filename, "a");
+    fprintf(fp, "# total weight of the MST is %d\n", weight);
+    fprintf(fp, "# total weight of the layout is %d\n", overlap);
+    fprintf(fp, "# reduction is %0.2f", reduction);
+    fclose(fp);
+}
+float rstReduction(int overlap, int weight){
+    return (float)overlap/weight*1.0f;
+}
+
 RST* buildRST(int** instance, int** MST, int length){
     RST* root;
     int rootIndex = findRoot(MST, length);
@@ -223,9 +276,10 @@ RST* buildRST(int** instance, int** MST, int length){
 
     //add overlap and path information to all the nodes
     addPaths(root, instance, MST, length);
-
+    printf("Overlap is %i\n", maxOverlap(root));
     // Make sure out calculations are correct
     recalcOverlap(root);
+    printf("Overlap is %i\n", maxOverlap(root));
     //return finished product
     return root;
 }
@@ -721,11 +775,41 @@ Path copyPath(Path toCopy){
     return copiedPath;
 }
 
-void printPath(Path path){
+void recursiveprintPaths(RST* root){
     // Print out paths according to spec
-    printf("[%i, %i] -> [%i, %i] -> [%i, %i]\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
+    if(root->path!=NULL){
+
+        Path path = root->path;
+        printf("[%i, %i] -> [%i, %i] -> [%i, %i]\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
+    } else{
+                printf("# layouts of the edges of the MST by Prim’s algorithm: ");
+    }
+    for(int i=0; i<root->indegree; i++){
+        recursiveprintPaths(root->child[i]);
+    }
 }
 
+void printPaths(RST* root, char* filename, char* options){
+    // Print out paths according to spec
+    if(options != NULL && strcmp(options, "output")==0){
+        //if option output, print to a file
+        fp = fopen(filename, "a");
+        fprintf(fp, "# layouts of the edges of the MST by Prim’s algorithm: \n");
+        fprintPaths(root, fp);
+        fclose(fp);
+    } else{
+        recursiveprintPaths(root);
+    }
+}
+void fprintPaths(RST* root, FILE* fp){
+    if(root->path != NULL){
+        Path path = root->path;
+        fprintf(fp, "[%i, %i] -> [%i, %i] -> [%i, %i]\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
+    }
+    for(int i=0; i<root->indegree; i++){
+        fprintPaths(root->child[i], fp);
+    }
+}
 void printList(RST* node, int depth) {
     // Prints out the contents of an RST struct according to
     // lab 10 specification
@@ -760,7 +844,10 @@ int maxOverlap(RST* root){
     }
     return distance;
 }
-
+void printPath(Path path){
+    // Print out paths according to spec
+    printf("[%i, %i] -> [%i, %i] -> [%i, %i]\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
+}
 int** buildSubMST(int** MST, int mst_length, int parentIndex, int* length){
     // Build a SubMST given when the parentIndex is in the first column
     // it returns the MST and updates the length pointer to the length of the
