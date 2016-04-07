@@ -127,6 +127,10 @@ float rstReduction(int overlap, int weight);
 
 void printFinal(int weight, int overlap, float reduction, char* filename);
 
+void printReductions(float reductions[10][10]);
+
+float rowAvg(float row[10]);
+
 // Must check for errors in instance, if so output error to console.
 // If option output is given, output file to a text
 // If option output is not given output to screen
@@ -211,7 +215,7 @@ int main(int argc, char** argv){
                 overlap = maxOverlap(root);
                 weight = totalWeight(MST, plane.instance_size-1);
                 reduction = rstReduction(overlap, weight);
-                reductions[i*10][plane.generation] = reduction;
+                reductions[i-1][plane.generation] = reduction;
                 printMST(MST,plane.instance_size, filename, options);
                 printf("Reduction: %f", reduction);
                 printPaths(root, filename, options);
@@ -223,7 +227,7 @@ int main(int argc, char** argv){
             plane.generation++;
         }
     }
-
+    printReductions(reductions);
     // // Now for the fun part
     // // Given the MST build a (in this case, non-optimal), rectilinear steiner tree
     // RST* root = buildRST(plane.instance, MST, plane.instance_size-1);
@@ -246,13 +250,29 @@ int main(int argc, char** argv){
 //
 ///////////////////////////////////////////////////////////////////////////
 void printReductions(float reductions[10][10]){
-    fp = fopen("reductions", "r");
+    fp = fopen("reductions.txt", "w");
+    float rowTotals = 0;
     for(int i=0; i < 10; i++){
         for(int j=0; j< 10; j++){
             fprintf(fp, "%-2.2f ", reductions[i][j]);
         }
         fprintf(fp, "\n");
     }
+    for(int i=0; i < 10; i++){
+        float avg = rowAvg(reductions[i]);
+        fprintf(fp, "%-2.2f\n", avg);
+        rowTotals += avg;
+    }
+    fprintf(fp, "%-2.2f", rowTotals/10.0f);
+    fclose(fp);
+}
+
+float rowAvg(float row[10]){
+    float total = 0.0f;
+    for(int i=0; i < 10; i++){
+        total += row[i];
+    }
+    return total/10.0f;
 }
 void printFinal(int weight, int overlap, float reduction, char* filename){
     fp = fopen(filename, "a");
@@ -804,7 +824,7 @@ void printPaths(RST* root, char* filename, char* options){
 void fprintPaths(RST* root, FILE* fp){
     if(root->path != NULL){
         Path path = root->path;
-        fprintf(fp, "[%i, %i] -> [%i, %i] -> [%i, %i]\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
+        fprintf(fp, "(%i, %i) --> (%i, %i) --> (%i, %i)\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
     }
     for(int i=0; i<root->indegree; i++){
         fprintPaths(root->child[i], fp);

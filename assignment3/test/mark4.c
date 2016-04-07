@@ -115,6 +115,16 @@ int currentTraversal(Path path);
 
 void recalcOverlap(RST* root);
 
+void printPaths(RST* root, char* filename, char* options);
+
+void recursiveprintPaths(RST* root);
+
+void fprintPaths(RST* root, FILE* fp);
+
+float rstReduction(int overlap, int weight);
+
+void printFinal(int weight, int overlap, float reduction, char* filename);
+
 // int totalDistance(RST* root);
 // Must check for errors in instance, if so output error to console.
 // If option output is given, output file to a text
@@ -126,7 +136,9 @@ int main(int argc, char** argv){
     char* options = NULL;
     bool correctFile = true;
     int** MST = NULL;
-    int* degrees;
+    int weight;
+    int overlap;
+    float reduction;
     //initiallize rand() with current time
     srand(time(NULL));
 
@@ -182,8 +194,16 @@ int main(int argc, char** argv){
             filename = genFilename(plane.NUM_PT, plane.generation);
             if(plane.instance_size > 1){
                 MST = prims(plane);
+
+                RST* root = buildRST(plane.instance, MST, plane.instance_size-1);
+                overlap = maxOverlap(root);
+
+                weight = totalWeight(MST, plane.instance_size-1);
+                reduction = rstReduction(overlap, weight);
                 printMST(MST,plane.instance_size, filename, options);
-                degrees = nodeDegree(MST, plane.instance_size-1);
+                printf("Reduction: %f", reduction);
+                printPaths(root, filename, options);
+                printFinal(weight, overlap, reduction, filename, options);
             } else {
                 printf("Can not generate MST, insufficient nodes \n");
             }
@@ -723,7 +743,7 @@ Path copyPath(Path toCopy){
 
 void printPath(Path path){
     // Print out paths according to spec
-    printf("[%i, %i] -> [%i, %i] -> [%i, %i]\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
+    printf("(%i, %i) --> (%i, %i) --> (%i, %i)\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
 }
 
 void printList(RST* node, int depth) {
@@ -797,6 +817,77 @@ int** buildSubMST(int** MST, int mst_length, int parentIndex, int* length){
         return subMST;
     }
     return NULL;
+}
+
+void recursiveprintPaths(RST* root){
+    // Print out paths according to spec
+    if(root->path!=NULL){
+
+        Path path = root->path;
+        printf("(%i, %i) --> (%i, %i) --> (%i, %i)\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
+    } else{
+                printf("# layouts of the edges of the MST by Prim’s algorithm: ");
+    }
+    for(int i=0; i<root->indegree; i++){
+        recursiveprintPaths(root->child[i]);
+    }
+}
+
+void printPaths(RST* root, char* filename, char* options){
+    // Print out paths according to spec
+    if(options != NULL && strcmp(options, "output")==0){
+        //if option output, print to a file
+        fp = fopen(filename, "a");
+        fprintf(fp, "# layouts of the edges of the MST by Prim’s algorithm: \n");
+        fprintPaths(root, fp);
+        fclose(fp);
+    } else{
+        recursiveprintPaths(root);
+    }
+}
+void fprintPaths(RST* root, FILE* fp){
+    if(root->path != NULL){
+        Path path = root->path;
+        fprintf(fp, "(%i, %i) --> (%i, %i) --> (%i, %i)\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
+    }
+    for(int i=0; i<root->indegree; i++){
+        fprintPaths(root->child[i], fp);
+    }
+}
+
+void printReductions(float reductions[10][10]){
+    fp = fopen("reductions.txt", "w");
+    float rowTotals = 0;
+    for(int i=0; i < 10; i++){
+        for(int j=0; j< 10; j++){
+            fprintf(fp, "%-2.2f ", reductions[i][j]);
+        }
+        fprintf(fp, "\n");
+    }
+    for(int i=0; i < 10; i++){
+        float avg = rowAvg(reductions[i]);
+        fprintf(fp, "%-2.2f\n", avg);
+        rowTotals += avg;
+    }
+    fprintf(fp, "%-2.2f", rowTotals/10.0f);
+    fclose(fp);
+}
+
+void printFinal(int weight, int overlap, float reduction, char* filename){
+    if(options != NULL && strcmp(options, "output")==0){
+        fp = fopen(filename, "a");
+        fprintf(fp, "# total weight of the MST is %d\n", weight);
+        fprintf(fp, "# total weight of the layout is %d\n", overlap);
+        fprintf(fp, "# reduction is %0.2f", reduction);
+        fclose(fp);
+    } else {
+        printf("# total weight of the MST is %d\n", weight);
+        printf("# total weight of the layout is %d\n", overlap);
+        printf("# reduction is %0.2f", reduction);
+    }
+}
+float rstReduction(int overlap, int weight){
+    return (float)overlap/weight*1.0f;
 }
 
 ////////////////////////////////////////////////////////////////////////

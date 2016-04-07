@@ -1,0 +1,40 @@
+#area [0, MAX_X] x [0, MAX_Y]
+1000	1000
+#number of points NUM_PT
+10
+#coordinates
+955	389
+819	494
+632	826
+273	572
+135	998
+107	779
+16	331
+736	959
+132	294
+853	744
+#end of instance
+# edges of the MST by Prim’s algorithm:
+0 1 241
+1 9 284
+9 2 303
+2 7 237
+2 5 572
+5 4 247
+5 3 373
+3 8 419
+8 6 153
+# total weight of the MST by Prim's algorithm is 2829
+# layouts of the edges of the MST by Prim’s algorithm: 
+(955, 389) --> (955, 494) --> (819, 494)
+(819, 494) --> (819, 744) --> (853, 744)
+(853, 744) --> (632, 744) --> (632, 826)
+(632, 826) --> (736, 826) --> (736, 959)
+(632, 826) --> (632, 779) --> (107, 779)
+(107, 779) --> (107, 998) --> (135, 998)
+(107, 779) --> (273, 779) --> (273, 572)
+(273, 572) --> (132, 572) --> (132, 294)
+(132, 294) --> (132, 331) --> (16, 331)
+# total weight of the MST is 2829
+# total weight of the layout is 284
+# reduction is 0.10
