@@ -51,6 +51,8 @@ typedef struct tree RST;
 
 typedef struct overlapPaths oPaths;
 
+RST* buildRST(int** instance, int** MST, int length);
+
 dTree* calcDTree(int** instance, int** MST, int instance_length);
 
 int calcOverlap(Path pathA, Path pathB, int parent);
@@ -191,17 +193,14 @@ int main(int argc, char** argv){
         }
     }
 
+    // Now for the fun part
+    // Given the MST build a (in this case, non-optimal), rectilinear steiner tree
+    RST* root = buildRST(plane.instance, MST, plane.instance_size-1);
 
-    RST* root;
-    int rootIndex = findRoot(MST, plane.instance_size-1);
-    root = buildNode(NULL, rootIndex, NULL, 0, 0 );
-
-    buildTree(root, plane.instance, MST, plane.instance_size-1);
-    addPaths(root, plane.instance, MST, plane.instance_size-1);
-
-    recalcOverlap(root);
     printList(root,0);
     printf("Overlap is %i\n", maxOverlap(root));
+
+
     freeMST(MST, plane.instance_size-1);
     freePlane(&plane);
     freeRST(root);
@@ -215,8 +214,26 @@ int main(int argc, char** argv){
 // Trees
 //
 ///////////////////////////////////////////////////////////////////////////
+RST* buildRST(int** instance, int** MST, int length){
+    RST* root;
+    int rootIndex = findRoot(MST, length);
+    // build it's node
+    root = buildNode(NULL, rootIndex, NULL, 0, 0 );
 
+    // build out the tree
+    buildTree(root, instance, MST, length);
+
+    //add overlap and path information to all the nodes
+    addPaths(root, instance, MST, length);
+
+    // Make sure out calculations are correct
+    recalcOverlap(root);
+    //return finished product
+    return root;
+}
 dTree* buildDTree(dTree* parent, int index, Path path, int pathLength,int overlap){
+
+    // Build a node for a decision tree
     dTree* newNode = malloc(sizeof(dTree));
     newNode->index = index;
     newNode->path  = path;
@@ -231,29 +248,36 @@ dTree* buildDTree(dTree* parent, int index, Path path, int pathLength,int overla
 }
 
 dTree* calcDTree(int** instance, int** MST, int instance_length){
+    // build a decision tree
     dTree* tree = NULL;
     int index =0;
     tree =  buildDTree(NULL, MST[0][0], NULL, 0, 0);
     recursiveDTree(tree, index, instance, MST,0, instance_length);
     recursiveDTree(tree, index, instance, MST,1, instance_length);
-    //printDTree(tree, 0);
     return tree;
 }
 
 void recursiveDTree(dTree* root, int index, int** instance, int** MST,int axis, int length){
+    // Build out a binary tree of decisions(possible layout for each node)
+    // if length =0 we have no more tree to build
     if(length ==0){
         return;
     } else {
         dTree* newNode;
+        // necessary information for new node
         int distance = MST[index][2];
         int* nodeA = instance[MST[index][0]];
         int* nodeB = instance[MST[index][1]];
 
+        // Find the edge of the node
         Path currentPath = buildPath(nodeA, nodeB, axis);
-
+        // calculate the overlap of the new edge with it's parents
         int overlap = recursiveFindOverlap(root, 0, currentPath);
 
+        // build new node given above information
         newNode = buildDTree(root, MST[index][1], currentPath, distance, overlap);
+
+        //adjust totaloverlap of all parent nodes
         adjustTotalOverlap(root, overlap);
         if(axis ==0){
             root->xTraversal = newNode;
@@ -270,6 +294,8 @@ void recursiveDTree(dTree* root, int index, int** instance, int** MST,int axis, 
 
 
 Path buildPath(int* node1, int* node2, int axis){
+    // build out a path(an edge) object given the knowledge
+    // of node1, node2, and it's axis of traversal
     int* node3 = malloc(sizeof(int)*2);
     Path path = malloc(sizeof(int)*6);
     if(axis == 0){
@@ -288,6 +314,7 @@ Path buildPath(int* node1, int* node2, int axis){
 }
 
 RST* buildNode(RST* parent, int index, Path path, int pathLength,int overlap){
+    // Instantiate a new node for an RST tree
     RST* newNode = malloc(sizeof(RST));
     newNode->index = index;
     newNode->path  = path;
@@ -303,9 +330,12 @@ RST* buildNode(RST* parent, int index, Path path, int pathLength,int overlap){
 }
 
 void buildTree(RST* root, int** instance, int** mst, int mst_length){
+    // Recursively build out the structure for a rectilinear steiner tree
+    // given an mst and an instance of coordinates
     for(int i=0; i< mst_length; i++){
         if(mst[i][0] == root->index){
-            //this must contain a child
+            // if a parent index exist in the first column of the MST it must
+            // have a child at the second column. Therefore add a new node
             RST* child = buildNode(root, mst[i][1],NULL, mst[i][2], 0);
             root->child[root->indegree] = child;
             root->indegree++;
@@ -318,30 +348,46 @@ void buildTree(RST* root, int** instance, int** mst, int mst_length){
 
 void addPaths(RST* root, int** instance, int** mst, int mst_length){
     if(root->indegree==0){
+        // if root has no children return
         return;
     } else {
+        // build up the paths from the leaf node first
         for(int i=0; i < root->indegree; i++){
             addPaths(root->child[i], instance, mst, mst_length);
         }
+        //find the maximal overlapping paths of the roots children
         oPaths* childPaths = findChildOverlaps(mst, instance, mst_length, root->index);
         for(int i=0; i < root->indegree; i++){
+            // mask child for easier referencing
             RST* child = root->child[i];
+            // find the index where the current child node is in the childPaths
+            // struct
             int index = findIndex(childPaths, child->index);
             if(index > -1){
+                // if child is in the struct
+                // update child's path and overlap information
                 child->path = childPaths->paths[index];
                 child->overlap = childPaths->overlap[index];
             }
+            // Find out if a parent's edge overlaps with it's children
             overlapWithChildren(child);
         }
     }
 }
 oPaths* findChildOverlaps(int** MST, int** instance,int mst_length, int parentIndex){
+    // Given an MST it builds up a tree of all possible ways to lay down children
+    // points with respect to their Parents
     int subLength;
+    //Build up a SubMST where the parent is in the first column
     int**  subMST = buildSubMST(MST, mst_length, parentIndex, &subLength);
     if (subLength>0 && subMST != NULL){
+        // build out the tree of layout
         dTree* tree = calcDTree(instance, subMST, subLength);
+        // find the maximal overlap of the tree
         oPaths* maximalOverlap = findOverlappedPaths(tree, NULL);
         freeMST(subMST, subLength);
+
+        // return the object to parents
         return maximalOverlap;
     }
     freeMST(subMST, subLength);
@@ -349,25 +395,37 @@ oPaths* findChildOverlaps(int** MST, int** instance,int mst_length, int parentIn
 }
 
 oPaths* findOverlappedPaths(dTree* root, oPaths* max){
+    // Traverse through a binary tree and find the maximally overlaping path
+    // to the bottom
     if(max==NULL){
+        // if max isn't made, make it
         max = malloc(sizeof(oPaths));
         max->length=0;
     }
     if(root->xTraversal == NULL){
+        // because this is a binary tree, each parent will either have two
+        // children or none once. Once we've run out of children return the max
+        // paths
         return max;
     } else {
+        // mask the two overlaps for easier readings
         int yOverlap = root->yTraversal->totalOverlap;
         int xOverlap = root->xTraversal->totalOverlap;
 
+        //add in the index of the current node to the struct
         max->index[max->length] =root->yTraversal->index;
 
 
         if(xOverlap > yOverlap){
+            // if xOverlap is bigger update the oPath struct
+            // and traverse down the x branch
             max->overlap[max->length] = root->xTraversal->overlap;
             max->paths[max->length] = copyPath(root->xTraversal->path);
             max->length++;
             return findOverlappedPaths(root->xTraversal, max);
         } else{
+            // if yOverlap is bigger update the oPath struct
+            // and traverse down the y branch
             max->overlap[max->length] = root->yTraversal->overlap;
             max->paths[max->length] = copyPath(root->yTraversal->path);
             max->length++;
@@ -425,32 +483,40 @@ void overlapWithChildren(RST* root){
             if(root->overlap > currentOverlap && root->overlap > newOverlap && root->overlap > newPathNewChild && root->overlap > oldPathNewChild){
                 // If root overlap provides the most overlap, break
                 break;
+
             } else if(currentOverlap > root->overlap && currentOverlap > newOverlap && currentOverlap > newPathNewChild && currentOverlap > oldPathNewChild){
                 // If currentOverlap provides the move overlap, update
                 // root->overlap
                 root->overlap = currentOverlap;
+
             } else if(newOverlap > currentOverlap && newOverlap > root->overlap && newOverlap > newPathNewChild && newOverlap > oldPathNewChild){
                 // if new root path provides the most overlap, update root
                 root->path = newPath;
                 root->overlap = newOverlap;
+
             } else if(newPathNewChild > currentOverlap && newPathNewChild > newOverlap && newPathNewChild > root->overlap && newPathNewChild > oldPathNewChild){
                 // handling a special case, if a child has overlap 0, change
                 // it's path if it overlaps with newPath update both root and child
                 root->path = newPath;
                 root->overlap = newOverlap;
                 root->child[i]->path = newChildPath;
+
             } else if(oldPathNewChild > currentOverlap && oldPathNewChild > newOverlap && oldPathNewChild > newPathNewChild && oldPathNewChild > root->overlap){
                 // handling a special case, if a child has overlap 0, change
                 //it's path if it overlaps with roots old path update root over lap and child path
                 root->overlap = newOverlap;
                 root->child[i]->path = newChildPath;
             }
-        }
 
-        if(root->child[i]->overlap > 0){
+        } else if(root->child[i]->overlap > 0){
+            // If current child can't doesn't have an overlap of zero...
             if(currentOverlap > newOverlap && currentOverlap > root->overlap){
+                // check to see if the overlap with child is greater than it's
+                // overlap with it's siblins, if it is update that overlap
                 root->overlap = currentOverlap;
             } else if(newOverlap > root->overlap && currentOverlap > root->overlap){
+                // If the newPath of the parent provides greater overlap with
+                // it's child than with it's siblings update accordingly
                 root->path = newPath;
                 root->overlap = newOverlap;
             }
@@ -510,40 +576,45 @@ int calcOverlap(Path pathA, Path pathB, int parent){
 /////////////////////////////////////////////////////////////////////////////
 void recalcOverlap(RST* root){
     // Top down traversal of the tree to recalculate overlap
+    // This function is to ensure my overlap calculations are correct
     int maxParentOverlap=0;
     int parentOverlap =0;
     for(int i=0; i< root->indegree; i++){
         int maximalOverlap = 0;
         int newOverlap = 0;
-        // find the maximal overlap with each child with every other child
+        // find the maximal overlap with for each child by comparing them with
+        // the other children
 
-        for(int j=i+1; j<root->indegree; j++)
+        for(int j=i+1; j<root->indegree; j++){
         // this should ensure that the children never double count each others overlap
             newOverlap = calcOverlap(root->child[i]->path, root->child[j]->path, 0);
                 if(newOverlap > maximalOverlap){
                     maximalOverlap = newOverlap;
                 }
+
         }
         root->child[i]->overlap = maximalOverlap;
+
+        if(root->path != NULL && root->child[i]!= NULL){
+            // If the root has a path and has children, check to see what it's
+            // maximal overlap values are with it's children
+            parentOverlap = calcOverlap(root->path, root->child[i]->path, 1);
+            if(parentOverlap > maxParentOverlap){
+                maxParentOverlap = parentOverlap;
+            }
+        }
+
+        if(maxParentOverlap>root->overlap){
+            root->overlap = maxParentOverlap;
+        }
         recalcOverlap(root->child[i]);
     }
 
-    if(root->path != NULL && root->child[i]!= NULL){
-        // If the root has a path and has children, check to see what it's
-        // maximal overlap values are with it's children
-        parentOverlap = calcOverlap(root->path, root->child[i]->path, 1);
-        if(parentOverlap > maxParentOverlap){
-            maxParentOverlap = parentOverlap;
-        }
-    }
-
-    if(maxParentOverlap>root->overlap){
-        root->overlap = maxParentOverlap;
-    }
 }
 
 
 void adjustTotalOverlap(dTree* node, int overlap){
+    // Adjust the total overlap up the tree
     if(node == NULL){
         return;
     }
@@ -577,6 +648,7 @@ int currentTraversal(Path path){
 }
 
 void printTabs(int depth){
+    // print certain amount of tabs per line
     for(int i =0; i< depth; i++){
             printf("\t");
     }
@@ -584,6 +656,8 @@ void printTabs(int depth){
 }
 
 int findIndex(oPaths* childPaths, int index){
+    // Find the where the index passed in exists
+    // in the oPaths struct
     if(childPaths == NULL){
         return -1;
     }
@@ -637,44 +711,8 @@ int findSharedNode(int** MST, int pathIndexA, int pathIndexB){
     return -1;
 }
 
-void printDTree(dTree* node, int depth) {
-    dTree* current = node;
-    if (depth==0){
-        printf("root is %i\n", current->index);
-    }
-    printf("\n");
-    for(int i =0; i< depth; i++){
-            printf("\t");
-    }
-    printf("Node index: %i\n", current->index);
-    for(int i =0; i< depth; i++){
-            printf("\t");
-    }
-    printf("Node maxOverlap %i\n", current->overlap);
-    for(int i =0; i< depth; i++){
-            printf("\t");
-    }
-    printf("Node totalOverlap %i\n", current->totalOverlap);
-    for(int i =0; i< depth; i++){
-            printf("\t");
-    }
-    depth++;
-    if(current->path != NULL){
-        printPath(current->path);
-    }
-    if(current->xTraversal != NULL){
-        printDTree(current->xTraversal, depth);
-    }
-    if(current->yTraversal != NULL){
-        printDTree(current->yTraversal, depth);
-    }
-}
-
-void printPath(Path path){
-    printf("[%i, %i] -> [%i, %i] -> [%i, %i]\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
-}
-
 Path copyPath(Path toCopy){
+    // Copy one into new memory and return that copy
     Path copiedPath = malloc(sizeof(int)*6);
     for(int i=0; i<3; i++){
         int* node = malloc(sizeof(int)*2);
@@ -683,6 +721,11 @@ Path copyPath(Path toCopy){
         copiedPath[i] = node;
     }
     return copiedPath;
+}
+
+void printPath(Path path){
+    // Print out paths according to spec
+    printf("[%i, %i] -> [%i, %i] -> [%i, %i]\n", path[0][0], path[0][1], path[1][0], path[1][1], path[2][0], path[2][1]);
 }
 
 void printList(RST* node, int depth) {
