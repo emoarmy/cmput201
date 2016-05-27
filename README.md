@@ -8,6 +8,4 @@ This required:
 - Validate data being read from a file
 - Generate random data and display it in the command line or a file.
 - Create a minimum spanning tree for the set of coordinates
-- Create an alogrithm to determine a reactilinear* steiner* tree
-
-A rectilinear steiner point is an intermediary point between two nodes that differs by only one axis from the two nodes.
+- Create an alogrithm to determine a [reactilinear steiner tree](https://en.wikipedia.org/wiki/Rectilinear_Steiner_tree)
